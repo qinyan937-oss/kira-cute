@@ -37,6 +37,12 @@ const BackIcon = () => (
   </svg>
 );
 
+const UndoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+  </svg>
+);
+
 const VolumeIcon = ({ muted }: { muted: boolean }) => (
     muted ? (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
@@ -78,6 +84,9 @@ export default function App() {
   const [isResizingSticker, setIsResizingSticker] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [initialResizeState, setInitialResizeState] = useState<{dist: number, scale: number} | null>(null);
+  
+  // Track which photo was last interacted with for Undo purposes
+  const [lastActiveIndex, setLastActiveIndex] = useState<number>(0);
 
   // Camera State
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -274,6 +283,9 @@ export default function App() {
   };
 
   const handlePointerDown = (e: React.PointerEvent, index: number) => {
+      // Set Active Index for Undo operations
+      setLastActiveIndex(index);
+      
       const canvas = canvasRefs.current[index];
       if (!canvas) return;
       const coords = getCanvasCoords(e, canvas);
@@ -452,6 +464,22 @@ export default function App() {
       setIsDraggingSticker(false);
       setIsResizingSticker(false);
       setInitialResizeState(null);
+  };
+
+  const handleUndoStroke = () => {
+    setDecorations(prev => {
+        const next = [...prev];
+        const targetDecor = next[lastActiveIndex];
+        
+        if (targetDecor && targetDecor.strokes.length > 0) {
+            play('cancel');
+            next[lastActiveIndex] = {
+                ...targetDecor,
+                strokes: targetDecor.strokes.slice(0, -1) // Remove last stroke
+            };
+        }
+        return next;
+    });
   };
 
   const addSticker = (stickerContent: string) => {
@@ -741,7 +769,16 @@ export default function App() {
 
             {editTab === 'draw' && (
                 <div className="space-y-2">
-                    <p className="text-xs text-center text-slate-400 mb-2">Draw directly on the photos!</p>
+                    <div className="flex items-center justify-between mb-2 px-2">
+                         <p className="text-xs text-slate-400">Draw directly on the photos!</p>
+                         <button 
+                           onClick={handleUndoStroke}
+                           className="flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full active:scale-95 transition-all hover:bg-slate-200 hover:text-pink-500"
+                         >
+                            <UndoIcon /> Undo
+                         </button>
+                    </div>
+                    
                     <div className="flex justify-center gap-3 flex-wrap">
                         {PEN_COLORS.map(c => (
                             <button 
