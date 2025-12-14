@@ -176,10 +176,23 @@ export default function App() {
 
   const startCamera = async () => {
       try {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-              video: { facingMode: "user", width: { ideal: 1080 }, height: { ideal: 1920 } }, 
-              audio: false 
-          });
+          // Attempt 1: Optimal Mobile Portrait settings
+          // Many desktop webcams might fail this specific constraint (e.g. facingMode 'user' not found or resolution too high)
+          let stream;
+          try {
+             stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user", width: { ideal: 1080 }, height: { ideal: 1920 } }, 
+                audio: false 
+             });
+          } catch (optimalError) {
+             console.warn("Optimal camera constraints failed, falling back to basic config.", optimalError);
+             // Attempt 2: Basic fallback
+             stream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: false 
+             });
+          }
+          
           setCameraStream(stream);
           setAppState(AppState.CAMERA);
           // Wait for video element to mount
@@ -191,7 +204,7 @@ export default function App() {
           }, 100);
       } catch (e) {
           console.error(e);
-          alert("Unable to access camera. Please use file upload.");
+          alert("Unable to access camera. Please check permissions or use file upload.");
       }
   };
 
