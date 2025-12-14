@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, StickerItem } from './types';
-import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, STICKER_PRESETS, PEN_COLORS } from './constants';
-import { loadImage, renderComposite, generateLayoutSheet, STICKER_FONT_SIZE } from './services/processor';
+import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, STICKER_CATEGORIES, PEN_COLORS } from './constants';
+import { loadImage, renderComposite, generateLayoutSheet, STICKER_BASE_SIZE } from './services/processor';
 import { playSound } from './services/audio';
 import Button from './components/Button';
 
@@ -66,6 +66,8 @@ export default function App() {
 
   // Decoration State
   const [editTab, setEditTab] = useState<'adjust' | 'draw' | 'sticker'>('adjust');
+  // Sub-tab for stickers
+  const [stickerCategory, setStickerCategory] = useState<'Y2K' | 'RIBBON' | 'DOODLE'>('Y2K');
   const [decorations, setDecorations] = useState<DecorationState[]>([]);
   const [penColor, setPenColor] = useState<string>(PEN_COLORS[0]);
   
@@ -296,25 +298,20 @@ export default function App() {
 
       for (let i = currentDecorations.stickers.length - 1; i >= 0; i--) {
           const s = currentDecorations.stickers[i];
-          const halfSize = (STICKER_FONT_SIZE * 1.2 * s.scale) / 2;
+          const halfSize = (STICKER_BASE_SIZE * 1.2 * s.scale) / 2;
           
-          // Simple AABB Hit Test (Assuming small rotation)
-          // Transform touch point to local sticker space would be more accurate, 
-          // but for simple UI, box check is fine.
           if (
               coords.x >= s.x - halfSize && 
               coords.x <= s.x + halfSize &&
               coords.y >= s.y - halfSize &&
               coords.y <= s.y + halfSize
           ) {
-              // Check if hitting the Delete Handle (Top Right)
-              // Handle is at (halfSize, -halfSize) relative to center
-              // We'll give it a generous hit radius
+              // Check Delete Handle
               if (selectedStickerId === s.id) {
                   const handleX = s.x + halfSize;
                   const handleY = s.y - halfSize;
                   const dist = Math.sqrt(Math.pow(coords.x - handleX, 2) + Math.pow(coords.y - handleY, 2));
-                  if (dist < 40) { // 40px hit radius
+                  if (dist < 40) { 
                       action = 'delete';
                       hitStickerId = s.id;
                       break;
@@ -328,7 +325,6 @@ export default function App() {
 
       if (hitStickerId) {
           if (action === 'delete') {
-              // Delete Logic
               play('cancel');
               setDecorations(prev => {
                   const next = [...prev];
@@ -340,7 +336,6 @@ export default function App() {
               });
               setSelectedStickerId(null);
           } else {
-              // Select & Drag Logic
               setSelectedStickerId(hitStickerId);
               const s = currentDecorations.stickers.find(st => st.id === hitStickerId);
               if (s) {
@@ -349,7 +344,6 @@ export default function App() {
               }
           }
       } else {
-          // Clicked empty space
           setSelectedStickerId(null);
       }
   };
@@ -359,10 +353,8 @@ export default function App() {
       if (!canvas) return;
       const coords = getCanvasCoords(e, canvas);
 
-      // --- MODE: DRAW ---
       if (isDrawing && editTab === 'draw' && currentStrokeRef.current) {
           currentStrokeRef.current.points.push(coords);
-          // Visual feedback
           const ctx = canvas.getContext('2d');
           if (ctx) {
               ctx.lineCap = 'round';
@@ -382,7 +374,6 @@ export default function App() {
           return;
       }
 
-      // --- MODE: DRAG STICKER ---
       if (isDraggingSticker && selectedStickerId) {
           setDecorations(prev => {
               const next = [...prev];
@@ -402,7 +393,6 @@ export default function App() {
   };
 
   const handlePointerUp = (index: number) => {
-      // End Drawing
       if (isDrawing && currentStrokeRef.current) {
           const newStroke = currentStrokeRef.current;
           setDecorations(prev => {
@@ -416,14 +406,10 @@ export default function App() {
           currentStrokeRef.current = null;
       }
       setIsDrawing(false);
-
-      // End Dragging
       setIsDraggingSticker(false);
   };
 
   const addSticker = (stickerContent: string) => {
-      // Add to ALL slots by default for quick decoration, 
-      // or just the first one? Let's do random placement on ALL slots.
       play('pop');
       setDecorations(prev => prev.map(dec => {
           const id = `sticker-${Date.now()}-${Math.random()}`;
@@ -439,8 +425,6 @@ export default function App() {
               }]
           };
       }));
-      // Select the last added sticker (on the first photo) to show feedback
-      // Note: This logic is a bit tricky with multiple photos, but user can just click to select.
   };
 
   const clearDecorations = (index: number) => {
@@ -459,10 +443,8 @@ export default function App() {
     play('shutter');
     triggerFlash();
     
-    // Deselect sticker before printing so box doesn't show
     setSelectedStickerId(null);
 
-    // Wait for state update (selection removal) to render
     setTimeout(() => {
         const sourceCanvases = canvasRefs.current.filter(c => c !== null) as HTMLCanvasElement[];
         if (sourceCanvases.length === 0) return;
@@ -682,7 +664,7 @@ export default function App() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-5 h-48 overflow-y-auto custom-scrollbar">
+        <div className="p-5 h-56 overflow-y-auto custom-scrollbar">
             {editTab === 'adjust' && (
                 <div className="space-y-4">
                      <div className="flex gap-4">
@@ -729,16 +711,34 @@ export default function App() {
             )}
 
             {editTab === 'sticker' && (
-                <div className="grid grid-cols-5 gap-3">
-                    {STICKER_PRESETS.map((s, i) => (
-                        <button 
-                          key={i} 
-                          onClick={() => addSticker(s)}
-                          className="text-3xl hover:scale-125 transition-transform active:scale-95 p-2"
-                        >
-                            {s}
-                        </button>
+                <div>
+                  {/* Category Filter */}
+                  <div className="flex justify-center gap-4 mb-4">
+                    {(['Y2K', 'RIBBON', 'DOODLE'] as const).map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setStickerCategory(cat)}
+                        className={`text-xs font-bold px-3 py-1 rounded-full transition-all border ${stickerCategory === cat ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200 hover:border-pink-300'}`}
+                      >
+                         {cat === 'Y2K' && '✨ Y2K'}
+                         {cat === 'RIBBON' && '🎀 Ribbon'}
+                         {cat === 'DOODLE' && '🖍️ Doodle'}
+                      </button>
                     ))}
+                  </div>
+
+                  {/* Sticker Grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                      {STICKER_CATEGORIES[stickerCategory].map((s) => (
+                          <button 
+                            key={s.id} 
+                            onClick={() => addSticker(s.id)}
+                            className="bg-slate-50 border border-slate-100 rounded-xl p-2 text-xs text-slate-500 hover:bg-pink-50 hover:border-pink-200 hover:text-pink-500 active:scale-95 transition-all"
+                          >
+                             {s.label}
+                          </button>
+                      ))}
+                  </div>
                 </div>
             )}
         </div>

@@ -1,3 +1,4 @@
+
 import { BackgroundPreset, FramePreset, LayoutTemplate } from './types';
 
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
@@ -22,7 +23,7 @@ export const FRAME_PRESETS: FramePreset[] = [
 export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   { id: 'cinema', name: 'Life4Cuts', description: '4-Frame Strip', icon: '🎞️', slots: 4 },
   { id: 'magazine', name: 'Magazine', description: 'Kawaii Collage', icon: '💖', slots: 4 },
-  { id: 'standard', name: 'ID Photo', description: 'Standard Grid', icon: '📋', slots: 1 }, // Usually ID photos are 1 face repeated
+  { id: 'standard', name: 'ID Photo', description: 'Standard Grid', icon: '📋', slots: 1 },
   { id: 'wanted', name: 'Wanted', description: 'Single Poster', icon: '🤠', slots: 1 },
 ];
 
@@ -36,8 +37,33 @@ export const PEN_COLORS = [
   '#DDA0DD', // Plum
 ];
 
-export const STICKER_PRESETS = [
-  '🎀', '💖', '✨', '🥺', '🌸', 
-  '💎', '👑', '🌈', '🍓', '🧸', 
-  '✌️', '💢', '🎵', '🦋', '🐾'
+// New Sticker Categories
+export const STICKER_CATEGORIES = {
+  Y2K: [
+    { id: 'y2k_star_silver', label: 'Silver Star' },
+    { id: 'y2k_star_holo', label: 'Holo Star' },
+    { id: 'y2k_moon_silver', label: 'Silver Moon' },
+    { id: 'y2k_moon_holo', label: 'Holo Moon' },
+    { id: 'y2k_cross_silver', label: 'Silver Cross' },
+  ],
+  RIBBON: [
+    { id: 'ribbon_red_satin', label: 'Red Satin' },
+    { id: 'ribbon_pink_satin', label: 'Pink Satin' },
+    { id: 'ribbon_blue_check', label: 'Blue Gingham' },
+    { id: 'ribbon_pink_check', label: 'Pink Gingham' },
+  ],
+  DOODLE: [
+    { id: 'doodle_sparkle', label: 'Sparkles' },
+    { id: 'doodle_heart', label: 'Hearts' },
+    { id: 'doodle_wings', label: 'Wings' },
+    { id: 'doodle_whiskers', label: 'Whiskers' },
+    { id: 'doodle_crown', label: 'Crown' },
+  ]
+};
+
+// Flattened list for type checking if needed, though we mainly use categories now
+export const ALL_STICKER_IDS = [
+  ...STICKER_CATEGORIES.Y2K.map(s => s.id),
+  ...STICKER_CATEGORIES.RIBBON.map(s => s.id),
+  ...STICKER_CATEGORIES.DOODLE.map(s => s.id),
 ];
