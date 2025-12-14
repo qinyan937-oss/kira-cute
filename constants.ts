@@ -25,3 +25,19 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   { id: 'standard', name: 'ID Photo', description: 'Standard Grid', icon: '📋', slots: 1 }, // Usually ID photos are 1 face repeated
   { id: 'wanted', name: 'Wanted', description: 'Single Poster', icon: '🤠', slots: 1 },
 ];
+
+export const PEN_COLORS = [
+  '#FFFFFF', // White
+  '#000000', // Black
+  '#FF69B4', // Hot Pink
+  '#87CEFA', // Sky Blue
+  '#FFD700', // Gold
+  '#98FB98', // Pale Green
+  '#DDA0DD', // Plum
+];
+
+export const STICKER_PRESETS = [
+  '🎀', '💖', '✨', '🥺', '🌸', 
+  '💎', '👑', '🌈', '🍓', '🧸', 
+  '✌️', '💢', '🎵', '🦋', '🐾'
+];

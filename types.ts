@@ -1,6 +1,7 @@
 export enum AppState {
-  TEMPLATE_SELECT = 'TEMPLATE_SELECT', // New initial state
+  TEMPLATE_SELECT = 'TEMPLATE_SELECT', 
   UPLOAD = 'UPLOAD',
+  CAMERA = 'CAMERA', // New Camera State
   PROCESSING = 'PROCESSING',
   EDIT = 'EDIT',
   LAYOUT = 'LAYOUT'
@@ -33,4 +34,31 @@ export interface LayoutTemplate {
   description: string;
   icon: string;
   slots: number; // Number of photo slots in this template
+}
+
+// --- Decoration Types ---
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Stroke {
+  color: string;
+  width: number;
+  points: Point[];
+}
+
+export interface StickerItem {
+  id: string;
+  content: string; // Emoji char or text
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+export interface DecorationState {
+  strokes: Stroke[];
+  stickers: StickerItem[];
 }

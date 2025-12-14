@@ -1,4 +1,4 @@
-import { BackgroundPreset, FramePreset, LayoutTemplate } from "../types";
+import { BackgroundPreset, FramePreset, LayoutTemplate, DecorationState } from "../types";
 
 // Helper to load image from URL/Blob
 export const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -14,9 +14,6 @@ export const loadImage = (src: string): Promise<HTMLImageElement> => {
 /**
  * CORE UTILITY: Draw Image Aspect Fill (Cover)
  * Prevents stretching by cropping the image to fill the target area while maintaining aspect ratio.
- * 
- * @param alignTop - If true, aligns image to the top edge (cropping bottom).
- * @param focusY - Optional (0.0 to 1.0). 0=Top, 0.5=Center, 1=Bottom. Overrides alignTop if provided.
  */
 const drawImageAspectFill = (
   ctx: CanvasRenderingContext2D,
@@ -37,17 +34,11 @@ const drawImageAspectFill = (
   let ny;
   
   if (focusY !== undefined) {
-      // Custom vertical focus (0.0 - 1.0)
-      // focusY = 0 -> Top aligned (0 offset)
-      // focusY = 0.5 -> Center ((nh-h)/2)
-      // We essentially want to shift the image up by a percentage of the overflow
       const overflowH = nh - h;
       ny = y - (overflowH * focusY);
   } else if (alignTop && nh > h) {
-      // Legacy alignTop support
       ny = y;
   } else {
-      // Default: Center vertically
       ny = y - (nh - h) / 2;
   }
 
@@ -137,8 +128,6 @@ const drawNoiseOverlay = (ctx: CanvasRenderingContext2D, width: number, height: 
     pCtx.putImageData(imgData, 0, 0);
 
     ctx.save();
-    // 'overlay' blends the noise naturally: 
-    // < 50% grey darkens the image, > 50% grey lightens it.
     ctx.globalCompositeOperation = 'overlay'; 
     ctx.globalAlpha = intensity;
     
@@ -156,12 +145,13 @@ interface RenderParams {
   backgroundImage?: BackgroundPreset;
   frameImage?: HTMLImageElement | null;
   lightingEnabled: boolean;
-  noiseLevel?: number; // 0.0 to 1.0 (Recommended max around 0.5)
+  noiseLevel?: number;
+  decorations?: DecorationState;
 }
 
 // Renders a SINGLE processed image (with BG and Frame)
 export const renderComposite = (params: RenderParams) => {
-  const { canvas, personImage, backgroundImage, frameImage, lightingEnabled, noiseLevel } = params;
+  const { canvas, personImage, backgroundImage, frameImage, lightingEnabled, noiseLevel, decorations } = params;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -206,24 +196,65 @@ export const renderComposite = (params: RenderParams) => {
 
   // 2. Person Image (Aspect Fill / Cover)
   ctx.save();
-  // Beauty Filters (Updated to requirements: Brightness +15%, Contrast -5%, Saturation +5%)
+  // Beauty Filters
   if (lightingEnabled) {
      ctx.filter = "brightness(1.15) contrast(0.95) saturate(1.05)";
   }
   
-  // Use the aspect fill helper to ensure the image covers the ENTIRE canvas
-  // Editor view: Use focusY=0.2 (20% from top) to frame face nicely without cutting forehead or chin
+  // Editor view: Use focusY=0.2 to frame face nicely
   drawImageAspectFill(ctx, personImage, 0, 0, TARGET_WIDTH, TARGET_HEIGHT, false, 0.2);
   
-  // 2.1 Apply Noise (Grain) if enabled
-  // Applied AFTER the image is drawn but BEFORE the frame overlay
+  // 3. Decorations (Graffiti & Stickers)
+  // Drawn BEFORE noise so they get the retro effect too, or AFTER? 
+  // Let's draw BEFORE frame but AFTER image.
+  
+  if (decorations) {
+      // 3.1 Strokes
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      decorations.strokes.forEach(stroke => {
+          ctx.beginPath();
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = stroke.width;
+          ctx.globalAlpha = 0.9;
+          if (stroke.points.length > 0) {
+               ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+               for (let i = 1; i < stroke.points.length; i++) {
+                   ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+               }
+          }
+          ctx.stroke();
+      });
+      ctx.globalAlpha = 1.0;
+
+      // 3.2 Stickers
+      decorations.stickers.forEach(sticker => {
+          ctx.save();
+          ctx.translate(sticker.x, sticker.y);
+          ctx.rotate(sticker.rotation);
+          ctx.scale(sticker.scale, sticker.scale);
+          
+          // Draw Text (Emoji)
+          ctx.font = "150px 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          // Shadow for pop
+          ctx.shadowColor = "rgba(0,0,0,0.2)";
+          ctx.shadowBlur = 10;
+          ctx.fillText(sticker.content, 0, 0);
+          
+          ctx.restore();
+      });
+  }
+
+  // 4. Apply Noise (Grain)
   if (noiseLevel && noiseLevel > 0) {
       drawNoiseOverlay(ctx, TARGET_WIDTH, TARGET_HEIGHT, noiseLevel);
   }
   
   ctx.restore();
 
-  // 3. Frame
+  // 5. Frame
   if (frameImage) {
     ctx.drawImage(frameImage, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
   }
