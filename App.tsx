@@ -461,6 +461,16 @@ export default function App() {
                 <p className="text-slate-500 text-sm font-medium">Choose how to create your purikura!</p>
             </div>
             
+            <div className="bg-yellow-50/80 border border-yellow-200 rounded-2xl p-3 mb-6 text-xs text-yellow-800 flex gap-2 items-start">
+               <span className="text-lg">💡</span>
+               <div>
+                 <span className="font-bold">Pro Tip:</span> To see the cute backgrounds, please use photos with <span className="font-bold">transparent backgrounds</span>.
+                 <a href="https://www.photoroom.com/tools/background-remover" target="_blank" rel="noreferrer" className="block mt-1 text-yellow-600 underline font-bold hover:text-yellow-500">
+                    Remove background here first &rarr;
+                 </a>
+               </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-4">
                 {/* Camera Option */}
                 <button 
