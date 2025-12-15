@@ -8,8 +8,8 @@ import Button from './components/Button';
 // --- TRANSLATIONS ---
 const TRANSLATIONS = {
   en: {
-    appTitle: "Puri-Cute",
-    appSubtitle: "✨ Photo Booth & Sticker Maker ✨",
+    appTitle: "KIRA",
+    appSubtitle: "Sparkle & Shine Photo Booth",
     shots: "Shot",
     shots_plural: "Shots",
     // Templates
@@ -59,8 +59,8 @@ const TRANSLATIONS = {
     loading: "Processing..."
   },
   zh: {
-    appTitle: "Puri-Cute 大头贴",
-    appSubtitle: "✨ 日系大头贴生成器 ✨",
+    appTitle: "KIRA 闪闪",
+    appSubtitle: "✨ 记录闪耀时刻 ✨",
     shots: "张",
     shots_plural: "张",
     // Templates
