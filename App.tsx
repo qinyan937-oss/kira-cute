@@ -636,7 +636,7 @@ const App = () => {
           <div className="max-w-md w-full bg-white/90 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border-[8px] border-white relative">
               <div className="absolute -top-6 -left-6 text-6xl animate-bounce drop-shadow-md">📸</div>
               
-              <Button variant="ghost" onClick={() => setAppState(AppState.TEMPLATE_SELECT)} className="mb-4">← {t.back}</Button>
+              <Button variant="secondary" onClick={() => setAppState(AppState.TEMPLATE_SELECT)} className="mb-4">← {t.back}</Button>
               <h2 className="text-3xl font-black text-slate-700 mb-8 text-center text-3d-blue">{t.choose_mode}</h2>
               
               <div className="space-y-6">
@@ -1030,7 +1030,7 @@ const App = () => {
 
               {/* Action Bar */}
               <div className="p-4 border-t border-slate-100 flex gap-4 flex-none bg-white">
-                  <Button variant="ghost" onClick={() => setAppState(AppState.UPLOAD)}>{t.back}</Button>
+                  <Button variant="secondary" onClick={() => setAppState(AppState.UPLOAD)}>{t.back}</Button>
                   <Button fullWidth onClick={generateFinal} className="shadow-pink-300">{t.finish}</Button>
               </div>
           </div>
@@ -1060,7 +1060,7 @@ const App = () => {
            <p className="text-slate-400 mt-6 mb-8 text-sm font-bold bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">{t.save_hint}</p>
            
            <div className="flex gap-4">
-               <Button variant="ghost" onClick={() => setAppState(AppState.EDIT)} className="text-white hover:text-white hover:bg-white/20">
+               <Button variant="secondary" onClick={() => setAppState(AppState.EDIT)}>
                    {t.back}
                </Button>
                {finalLayoutUrl && (
