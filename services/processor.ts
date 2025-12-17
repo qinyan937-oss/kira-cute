@@ -1102,29 +1102,66 @@ export const generateLayoutSheet = (
      ctx.fillText(`${dateText} • ${locationText}`, sheet.width / 2, sheet.height - footerH / 2);
 
   } else if (templateId === 'polaroid') {
-      // Single Polaroid style
-      const pW = 800;
-      const pH = 1000;
-      sheet.width = pW;
-      sheet.height = pH;
+      // Single Polaroid style with Colorful Starry Frame
+      const photoW = canvases[0].width;
+      const photoH = canvases[0].height;
+
+      // Define frame padding (scaled to photo size)
+      // Standard Polaroid is roughly 1:1.2 aspect overall.
+      const framePaddingX = 80;
+      const framePaddingTop = 80;
+      const framePaddingBottom = 250; 
       
-      ctx.fillStyle = '#fff';
-      if (bgPreset.type === 'color') ctx.fillStyle = bgPreset.value;
-      else ctx.fillStyle = '#fdfdfd';
+      const sheetW = photoW + (framePaddingX * 2);
+      const sheetH = photoH + framePaddingTop + framePaddingBottom;
+      
+      sheet.width = sheetW;
+      sheet.height = sheetH;
 
-      ctx.fillRect(0, 0, sheet.width, sheet.height);
+      // 1. Colorful Gradient Background
+      const grad = ctx.createLinearGradient(0, 0, sheetW, sheetH);
+      grad.addColorStop(0, '#ff9a9e');
+      grad.addColorStop(0.25, '#fad0c4');
+      grad.addColorStop(0.5, '#fbc2eb');
+      grad.addColorStop(0.75, '#a18cd1');
+      grad.addColorStop(1, '#8fd3f4');
+      
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, sheetW, sheetH);
 
-      if (canvases[0]) {
-          const margin = 50;
-          const photoSize = pW - (margin * 2);
-          const c = canvases[0];
-          // Determine height based on source aspect ratio, but constraint it
-          const drawH = photoSize * (c.height / c.width);
+      // 2. Stars
+      const borderStarsCount = 35;
+      for (let i = 0; i < borderStarsCount; i++) {
+          let x, y;
+          const r = Math.random();
+          if (r < 0.25) { // Top
+              x = Math.random() * sheetW;
+              y = Math.random() * framePaddingTop;
+          } else if (r < 0.5) { // Bottom
+              x = Math.random() * sheetW;
+              y = sheetH - (Math.random() * framePaddingBottom);
+          } else if (r < 0.75) { // Left
+              x = Math.random() * framePaddingX;
+              y = Math.random() * sheetH;
+          } else { // Right
+              x = sheetW - (Math.random() * framePaddingX);
+              y = Math.random() * sheetH;
+          }
           
-          ctx.drawImage(c, margin, margin, photoSize, drawH);
-          
-          // Removed Text as requested
+          const size = 10 + Math.random() * 20;
+          drawHandDrawnStar(ctx, x, y, size, size * 0.45, '#FFFFFF');
       }
+
+      // 3. Photo with white border
+      if (canvases[0]) {
+          const whiteBorder = 15;
+          ctx.fillStyle = '#FFFFFF';
+          // Draw white rectangle slightly larger than photo to separate it from the colorful background
+          ctx.fillRect(framePaddingX - whiteBorder, framePaddingTop - whiteBorder, photoW + (whiteBorder * 2), photoH + (whiteBorder * 2));
+          ctx.drawImage(canvases[0], framePaddingX, framePaddingTop, photoW, photoH);
+      }
+      
+      // No text
 
   } else if (templateId === 'driver_license') {
       // Landscape Card
