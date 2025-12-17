@@ -656,34 +656,6 @@ const drawNoiseOverlay = (ctx: CanvasRenderingContext2D, width: number, height: 
 };
 
 /**
- * HELPER: Draw Colorful Scratches (New Request)
- */
-const drawColorfulScratches = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen'; 
-    // Random scratches
-    const scratchCount = 20;
-    const colors = ['#FFC0CB', '#87CEFA', '#98FB98', '#DDA0DD', '#FFFFE0'];
-    
-    for (let i = 0; i < scratchCount; i++) {
-        ctx.beginPath();
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const len = 50 + Math.random() * 150;
-        const angle = (Math.random() - 0.5) * Math.PI; // Mostly vertical/diagonal
-        
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + Math.sin(angle) * len, y + Math.cos(angle) * len);
-        
-        ctx.strokeStyle = colors[Math.floor(Math.random() * colors.length)];
-        ctx.lineWidth = 1 + Math.random() * 2;
-        ctx.globalAlpha = 0.4 + Math.random() * 0.3; // Shallow transparency
-        ctx.stroke();
-    }
-    ctx.restore();
-};
-
-/**
  * HELPER: Draw Hand-Drawn Star
  */
 const drawHandDrawnStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, outerRadius: number, innerRadius: number, color: string) => {
@@ -1195,9 +1167,6 @@ export const generateLayoutSheet = (
       ctx.fillRect(framePaddingX - 5, framePaddingTop - 5, photoW + 10, photoH + 10);
       
       ctx.drawImage(canvases[0], framePaddingX, framePaddingTop, photoW, photoH);
-      
-      // 4. Colorful Scratches Overlay
-      drawColorfulScratches(ctx, sheetW, sheetH);
       
       // 5. Date/Text
       ctx.fillStyle = '#FFFFFF';
