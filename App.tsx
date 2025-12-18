@@ -1,4 +1,5 @@
 
+import { GoogleGenAI } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, StickerItem, ImageTransform } from './types';
 import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, STICKER_CATEGORIES, PEN_COLORS } from './constants';
@@ -14,13 +15,13 @@ const TRANSLATIONS = {
     shots: "Shot",
     shots_plural: "Shots",
     tpl_cinema: "Life4Cuts",
-    tpl_cinema_desc: "4-Frame Strip",
+    tpl_cinema_desc: "2 Separate Strips (White/Pink)",
     tpl_polaroid: "Polaroid",
-    tpl_polaroid_desc: "Starry Frame",
+    tpl_polaroid_desc: "Blue Frame & 5 Stars",
     tpl_standard: "ID Photo",
-    tpl_standard_desc: "Standard Grid",
+    tpl_standard_desc: "Perfect Blue Grid",
     tpl_driver_license: "License",
-    tpl_driver_license_desc: "Driver ID",
+    tpl_driver_license_desc: "Pink Driver ID",
     choose_mode: "How to start?",
     start_camera: "Camera",
     upload_photos: "Album",
@@ -74,13 +75,13 @@ const TRANSLATIONS = {
     shots: "张",
     shots_plural: "张",
     tpl_cinema: "人生四格",
-    tpl_cinema_desc: "经典胶卷风",
-    tpl_polaroid: "星光拍立得",
-    tpl_polaroid_desc: "彩色星光相框",
-    tpl_standard: "证件照",
-    tpl_standard_desc: "标准排版",
+    tpl_cinema_desc: "双份独立条纸 (白/粉)",
+    tpl_polaroid: "蓝彩拍立得",
+    tpl_polaroid_desc: "蓝色渐变与5颗星",
+    tpl_standard: "日系证件照",
+    tpl_standard_desc: "完美蓝格排版",
     tpl_driver_license: "美国驾照",
-    tpl_driver_license_desc: "个性证件",
+    tpl_driver_license_desc: "粉色个性证件",
     choose_mode: "想怎么拍？",
     start_camera: "拍 照",
     upload_photos: "相 册",
@@ -218,8 +219,8 @@ const App = () => {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraCountdown, setCameraCountdown] = useState<number | null>(null);
 
-  // Final Result
-  const [finalLayoutUrl, setFinalLayoutUrl] = useState<string | null>(null);
+  // Final Result (Updated to handle multiple URLs)
+  const [finalLayoutUrls, setFinalLayoutUrls] = useState<string[]>([]);
 
   // --- Effects ---
 
@@ -450,7 +451,7 @@ const App = () => {
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
       if (interactionMode.current === 'none') return;
-      if (e.cancelable && interactionMode.current !== 'none') e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const pt = getCanvasPoint(e, idx);
 
       if (interactionMode.current === 'draw') {
@@ -568,10 +569,10 @@ const App = () => {
       try {
           const validCanvases = canvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null && c instanceof HTMLCanvasElement && c.width > 0 && c.height > 0);
           if (validCanvases.length === 0) throw new Error("No valid image data found.");
-          // Pass currentBg to generateLayoutSheet
-          const url = generateLayoutSheet(validCanvases, selectedTemplate.id, customLocation, customName, customDate, currentBg);
-          if (!url) throw new Error("Generation produced empty result.");
-          setFinalLayoutUrl(url);
+          
+          const urls = generateLayoutSheet(validCanvases, selectedTemplate.id, customLocation, customName, customDate);
+          if (!urls || urls.length === 0) throw new Error("Generation produced empty result.");
+          setFinalLayoutUrls(urls);
           setAppState(AppState.LAYOUT);
           playSound('success');
       } catch (e) {
@@ -581,21 +582,24 @@ const App = () => {
       }
   };
   
-  const handleDownload = () => {
-      if (finalLayoutUrl) {
-          const a = document.createElement('a');
-          a.href = finalLayoutUrl;
-          a.download = `KIRA_${Date.now()}.png`;
-          a.click();
-          playSound('success');
-      }
+  const handleDownload = (url: string, index: number) => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `KIRA_${Date.now()}_${index+1}.png`;
+      a.click();
+      playSound('success');
+  };
+
+  // Standard Back Navigation with Audio
+  const handleGoBack = (toState: AppState) => {
+      setAppState(toState);
+      playSound('cancel');
   };
 
   // --- Renders ---
 
   const renderTemplateSelect = () => (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
-          {/* Decorative Floaters */}
           <div className="absolute top-10 left-10 text-6xl opacity-30 animate-float pointer-events-none">☁️</div>
           <div className="absolute bottom-20 right-10 text-6xl opacity-30 animate-bounce-soft pointer-events-none">🎀</div>
 
@@ -615,10 +619,7 @@ const App = () => {
                     onClick={() => handleTemplateSelect(tpl)}
                     className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-6 shadow-2xl hover:-translate-y-4 transition-all duration-300 border-[6px] border-white hover:border-pink-300 flex flex-col items-center group relative overflow-hidden"
                   >
-                      {/* Shine effect */}
                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/60 to-transparent pointer-events-none" />
-                      
-                      {/* 3D Emoji Icon Container */}
                       <div className="text-7xl mb-6 transform group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300 drop-shadow-[0_10px_10px_rgba(236,72,153,0.3)]">
                           {tpl.icon}
                       </div>
@@ -639,11 +640,10 @@ const App = () => {
   );
 
   const renderUpload = () => (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
           <div className="max-w-md w-full bg-white/90 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border-[8px] border-white relative">
               <div className="absolute -top-6 -left-6 text-6xl animate-bounce drop-shadow-md">📸</div>
               
-              <Button variant="secondary" onClick={() => setAppState(AppState.TEMPLATE_SELECT)} className="mb-4">← {t.back}</Button>
               <h2 className="text-3xl font-black text-slate-700 mb-8 text-center text-3d-blue">{t.choose_mode}</h2>
               
               <div className="space-y-6">
@@ -672,6 +672,10 @@ const App = () => {
                         onChange={handleFileUpload}
                       />
                   </div>
+
+                  <div className="pt-6 border-t border-slate-100">
+                      <Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.TEMPLATE_SELECT)}>← {t.back}</Button>
+                  </div>
               </div>
           </div>
       </div>
@@ -688,29 +692,30 @@ const App = () => {
              )}
           </div>
           
-          <div className="h-48 bg-white/10 backdrop-blur-md flex justify-around items-center rounded-t-[3rem] border-t border-white/20 pb-8">
-              <Button variant="ghost" className="text-white hover:text-white bg-white/10 hover:bg-white/20" onClick={() => {
+          <div className="h-48 bg-white/10 backdrop-blur-md flex justify-between items-center rounded-t-[3rem] border-t border-white/20 pb-8 px-10">
+              <Button variant="secondary" onClick={() => {
                    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-                   setAppState(AppState.UPLOAD);
-              }}>{t.cancel}</Button>
+                   handleGoBack(AppState.UPLOAD);
+              }} className="shrink-0 px-6">← {t.cancel}</Button>
               
-              <button 
-                onClick={takeBurstPhotos}
-                disabled={cameraCountdown !== null}
-                className="w-24 h-24 bg-gradient-to-b from-pink-400 to-pink-600 rounded-full border-4 border-white shadow-[0_0_0_8px_rgba(255,255,255,0.3)] flex items-center justify-center active:scale-95 transition-transform"
-              >
-                  <div className="w-20 h-20 border-2 border-white/50 rounded-full"></div>
-              </button>
+              <div className="flex-1 flex justify-center">
+                  <button 
+                    onClick={takeBurstPhotos}
+                    disabled={cameraCountdown !== null}
+                    className="w-24 h-24 bg-gradient-to-b from-pink-400 to-pink-600 rounded-full border-4 border-white shadow-[0_0_0_8px_rgba(255,255,255,0.3)] flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                      <div className="w-20 h-20 border-2 border-white/50 rounded-full"></div>
+                  </button>
+              </div>
               
-              <div className="w-20"></div> 
+              <div className="w-24 md:w-32 invisible"></div>
           </div>
       </div>
   );
 
   const renderEditor = () => (
       <div className="fixed inset-0 w-full flex flex-col md:flex-row overflow-hidden bg-[#fff0f5]">
-          {/* Main Workspace - Increased padding to p-8 to shrink image usage area */}
-          <div className="flex-1 min-h-0 relative flex items-center justify-center p-8 overflow-hidden">
+          <div className="flex-1 min-0 relative flex items-center justify-center p-8 overflow-hidden">
               <div className="relative w-full h-full max-w-2xl max-h-full flex items-center justify-center">
                   <div className="grid gap-4 w-full h-full justify-center content-center" style={{ 
                       gridTemplateColumns: selectedTemplate.slots > 1 ? '1fr 1fr' : '1fr',
@@ -728,7 +733,7 @@ const App = () => {
                             }}
                           >
                               <canvas 
-                                ref={el => canvasRefs.current[idx] = el}
+                                ref={el => { if (el) canvasRefs.current[idx] = el; }}
                                 className="w-full h-full object-contain bg-white cursor-crosshair touch-none"
                                 onMouseDown={(e) => handlePointerDown(e, idx)}
                                 onTouchStart={(e) => handlePointerDown(e, idx)}
@@ -747,10 +752,7 @@ const App = () => {
               </div>
           </div>
 
-          {/* Controls Sidebar - Added Toggle Logic */}
           <div className={`flex-none z-20 w-full md:w-[420px] bg-white/90 backdrop-blur-2xl shadow-[0_-20px_50px_-20px_rgba(244,114,182,0.4)] flex flex-col rounded-t-[2.5rem] md:rounded-l-[2.5rem] md:rounded-tr-none border-t border-l border-white/60 transition-all duration-300 ${isSidebarOpen ? 'max-h-[55vh] md:h-full' : 'max-h-[140px] md:h-full'}`}>
-              
-              {/* Cute Tabs */}
               <div className="relative flex justify-around p-4 pb-2">
                   {[
                       { id: 'adjust', icon: <Icons.Adjust />, label: t.tab_adjust, color: 'bg-blue-100' },
@@ -773,7 +775,6 @@ const App = () => {
                       </button>
                   ))}
                   
-                  {/* Collapse Button */}
                   <button 
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-400 hover:text-pink-500 transition-colors md:hidden"
@@ -784,7 +785,6 @@ const App = () => {
               
               <div className="w-full h-px bg-slate-100 mb-2"></div>
 
-              {/* Tools Content - Scrollable Area (Hidden when collapsed) */}
               {isSidebarOpen && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   {activeTab === 'adjust' && (
@@ -806,7 +806,6 @@ const App = () => {
                             </Button>
                         </div>
 
-                        {/* Input Fields for ID/License */}
                         {(selectedTemplate.id === 'standard' || selectedTemplate.id === 'driver_license') && (
                             <div className="bg-pink-50 p-4 rounded-2xl border-2 border-pink-100 space-y-3">
                                 <div className="space-y-1">
@@ -1044,17 +1043,16 @@ const App = () => {
               </div>
               )}
 
-              {/* Action Bar */}
               <div className="p-4 border-t border-slate-100 flex gap-4 flex-none bg-white">
-                  <Button variant="secondary" onClick={() => setAppState(AppState.UPLOAD)}>{t.back}</Button>
-                  <Button fullWidth onClick={generateFinal} className="shadow-pink-300">{t.finish}</Button>
+                  <Button variant="secondary" onClick={() => handleGoBack(AppState.UPLOAD)} className="shrink-0 px-6">← {t.back}</Button>
+                  <Button fullWidth onClick={generateFinal} className="shadow-pink-300 flex-1">{t.finish}</Button>
               </div>
           </div>
       </div>
   );
 
   const renderLayout = () => (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 relative">
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 pb-32 relative">
            <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
               <div className="absolute top-10 left-10 text-8xl animate-float">✨</div>
               <div className="absolute bottom-10 right-10 text-8xl animate-bounce-soft">💖</div>
@@ -1062,10 +1060,17 @@ const App = () => {
 
            <h2 className="text-white font-black text-4xl mb-8 animate-bounce text-3d-white">{t.ready_msg}</h2>
            
-           <div className="bg-white p-4 rounded-sm shadow-[0_0_50px_rgba(255,255,255,0.2)] max-h-[60vh] overflow-y-auto transform rotate-1 hover:rotate-0 transition-transform duration-500">
-               {finalLayoutUrl ? (
-                   <img src={finalLayoutUrl} alt="Print Layout" className="max-w-full h-auto shadow-inner" />
-               ) : (
+           <div className="flex flex-col md:flex-row gap-8 items-center justify-center max-w-full overflow-x-auto p-4 scrollbar-hide">
+               {finalLayoutUrls.length > 0 ? finalLayoutUrls.map((url, i) => (
+                   <div key={i} className="flex flex-col items-center gap-4">
+                       <div className="bg-white p-4 rounded-sm shadow-[0_0_50px_rgba(255,255,255,0.2)] max-h-[60vh] overflow-y-auto transform transition-transform duration-500 hover:scale-105">
+                           <img src={url} alt={`Print Layout ${i+1}`} className="max-w-full h-auto shadow-inner" />
+                       </div>
+                       <Button onClick={() => handleDownload(url, i)} size="sm" className="shadow-white/20">
+                           {t.save_btn} {finalLayoutUrls.length > 1 ? `#${i+1}` : ''}
+                       </Button>
+                   </div>
+               )) : (
                    <div className="w-64 h-64 flex flex-col items-center justify-center text-slate-400">
                        <p className="mb-2">⚠️</p>
                        <p>Oops!</p>
@@ -1074,16 +1079,11 @@ const App = () => {
            </div>
            
            <p className="text-slate-400 mt-6 mb-8 text-sm font-bold bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">{t.save_hint}</p>
-           
-           <div className="flex gap-4">
-               <Button variant="secondary" onClick={() => setAppState(AppState.EDIT)}>
-                   {t.back}
-               </Button>
-               {finalLayoutUrl && (
-                <Button onClick={handleDownload} size="lg" className="shadow-white/20">
-                    {t.save_btn}
-                </Button>
-               )}
+
+           <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-900/90 backdrop-blur-lg border-t border-white/10 flex justify-center z-50">
+               <div className="max-w-md w-full">
+                   <Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.EDIT)}>← {t.back}</Button>
+               </div>
            </div>
       </div>
   );
