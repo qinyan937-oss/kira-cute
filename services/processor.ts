@@ -318,6 +318,7 @@ export const renderComposite = (params: RenderParams) => {
  */
 export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: string, loc: string, name: string, date: string): string[] => {
     const results: string[] = [];
+    const SAVE_SCALE = 0.7; // Scale everything down to 70% for optimized save size
 
     if (templateId === 'cinema') {
         const styles = [
@@ -328,7 +329,9 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
         styles.forEach(style => {
             const sheet = document.createElement('canvas');
             const ctx = sheet.getContext('2d')!;
-            sheet.width = 600; sheet.height = 1800;
+            sheet.width = 600 * SAVE_SCALE; sheet.height = 1800 * SAVE_SCALE;
+            ctx.scale(SAVE_SCALE, SAVE_SCALE);
+            
             ctx.fillStyle = style.bg; ctx.fillRect(0,0,600,1800);
             ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 596, 1796);
             
@@ -347,7 +350,9 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
         const ctx = sheet.getContext('2d')!;
 
         if (templateId === 'polaroid') {
-            sheet.width = 1100; sheet.height = 1400;
+            sheet.width = 1100 * SAVE_SCALE; sheet.height = 1400 * SAVE_SCALE;
+            ctx.scale(SAVE_SCALE, SAVE_SCALE);
+            
             const g = ctx.createLinearGradient(0, 0, 0, 1400); 
             g.addColorStop(0, '#3b82f6'); 
             g.addColorStop(0.5, '#2563eb');
@@ -367,7 +372,9 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
             results.push(sheet.toDataURL('image/png'));
 
         } else if (templateId === 'driver_license') {
-            sheet.width = 1000; sheet.height = 630;
+            sheet.width = 1000 * SAVE_SCALE; sheet.height = 630 * SAVE_SCALE;
+            ctx.scale(SAVE_SCALE, SAVE_SCALE);
+            
             ctx.fillStyle = '#fce7f3'; ctx.fillRect(0, 0, 1000, 630);
             
             ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 1;
@@ -399,7 +406,9 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
             results.push(sheet.toDataURL('image/png'));
 
         } else if (templateId === 'standard') {
-            sheet.width = 1200; sheet.height = 800;
+            sheet.width = 1200 * SAVE_SCALE; sheet.height = 800 * SAVE_SCALE;
+            ctx.scale(SAVE_SCALE, SAVE_SCALE);
+            
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1200, 800);
             
             ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 1;

@@ -11,7 +11,7 @@ import Button from './components/Button';
 const TRANSLATIONS = {
   en: {
     appTitle: "KIRA",
-    appSubtitle: "Sparkle & Shine Photo Booth",
+    appSubtitle: "3D GUMMY KIRA",
     shots: "Shot",
     shots_plural: "Shots",
     tpl_cinema: "Life4Cuts",
@@ -65,7 +65,7 @@ const TRANSLATIONS = {
   },
   zh: {
     appTitle: "KIRA 闪闪",
-    appSubtitle: "✨ 记录闪耀时刻 ✨",
+    appSubtitle: "3D 果冻字",
     shots: "张",
     shots_plural: "张",
     tpl_cinema: "人生四格",
@@ -567,7 +567,9 @@ const App = () => {
           <div className="absolute bottom-20 right-10 text-6xl opacity-30 animate-bounce-soft pointer-events-none">🎀</div>
           <div className="z-10 text-center mb-10">
               <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
-              <p className="text-slate-400 font-bold text-lg bg-white/50 inline-block px-6 py-2 rounded-full backdrop-blur-sm shadow-sm">{t.appSubtitle}</p>
+              <p className="text-3xl md:text-5xl font-black text-3d-blue animate-bounce-soft mt-2">
+                  {t.appSubtitle}
+              </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 z-10 w-full max-w-5xl">
               {LAYOUT_TEMPLATES.map(tpl => (
