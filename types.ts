@@ -2,7 +2,7 @@
 export enum AppState {
   TEMPLATE_SELECT = 'TEMPLATE_SELECT', 
   UPLOAD = 'UPLOAD',
-  CAMERA = 'CAMERA', // New Camera State
+  CAMERA = 'CAMERA', 
   PROCESSING = 'PROCESSING',
   EDIT = 'EDIT',
   LAYOUT = 'LAYOUT'
@@ -11,14 +11,14 @@ export enum AppState {
 export interface BackgroundPreset {
   id: string;
   name: string;
-  value: string; // CSS color or gradient string
+  value: string; 
   type: 'color' | 'gradient' | 'pattern';
 }
 
 export interface FramePreset {
   id: string;
   name: string;
-  src: string; // URL
+  src: string; 
   isCustom?: boolean;
 }
 
@@ -34,11 +34,9 @@ export interface LayoutTemplate {
   name: string;
   description: string;
   icon: string;
-  slots: number; // Number of photo slots in this template
-  aspectRatio: number; // width / height (e.g. 0.75 for 3:4 portrait, 1.5 for 3:2 landscape)
+  slots: number; 
+  aspectRatio: number; 
 }
-
-// --- Decoration Types ---
 
 export interface Point {
   x: number;
@@ -49,17 +47,17 @@ export interface Stroke {
   color: string;
   width: number;
   points: Point[];
-  isNeon?: boolean; // New: Supports Neon/Fluorescent style
+  isNeon?: boolean; 
 }
 
 export interface StickerItem {
   id: string;
-  content: string; // Emoji char or text
+  content: string;
   x: number;
   y: number;
   scale: number;
   rotation: number;
-  isFlipped?: boolean; // New: Support mirroring
+  isFlipped?: boolean;
 }
 
 export interface DecorationState {
@@ -67,7 +65,6 @@ export interface DecorationState {
   stickers: StickerItem[];
 }
 
-// New: Image Transform State
 export interface ImageTransform {
     x: number;
     y: number;
@@ -81,12 +78,12 @@ export interface RenderParams {
   frameImage?: HTMLImageElement | null;
   lightingEnabled: boolean;
   noiseLevel?: number;
-  filmLookStrength?: number; // New: Film look intensity (0-1)
+  filmLookStrength?: number; 
   showDate?: boolean;
   decorations?: DecorationState;
-  selectedStickerId?: string | null;
   imageTransform?: ImageTransform;
+  selectedStickerId?: string | null;
   isMoeMode?: boolean; 
   aspectRatio?: number;
-  isImageFit?: boolean; // New: Fit vs Fill mode
+  isImageFit?: boolean; 
 }

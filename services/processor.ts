@@ -13,6 +13,163 @@ export const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 /**
+ * PURE CANVAS STICKER DRAWING
+ */
+export const drawStickerAsset = (ctx: CanvasRenderingContext2D, id: string, size: number) => {
+    ctx.save();
+    switch (id) {
+        // Group 1: Y2K Galactic (Liquid Metal)
+        case 'y2k_galactic_star': {
+            const g = ctx.createLinearGradient(-size, -size, size, size);
+            g.addColorStop(0, "#FFFFFF"); g.addColorStop(0.3, "#E0E0E0"); g.addColorStop(0.5, "#B0B0B0"); g.addColorStop(0.8, "#606060"); g.addColorStop(1, "#A0A0A0");
+            ctx.fillStyle = g; ctx.shadowColor = "#00FFFF"; ctx.shadowBlur = size * 0.2;
+            ctx.beginPath();
+            for (let i = 0; i < 10; i++) {
+                const r = i % 2 === 0 ? size : size * 0.35;
+                const a = (i * 36 - 90) * Math.PI / 180;
+                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath(); ctx.fill();
+            // Highlight
+            ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.beginPath(); ctx.arc(-size*0.3, -size*0.3, size*0.15, 0, Math.PI*2); ctx.fill();
+            break;
+        }
+        case 'y2k_galactic_moon': {
+            const g = ctx.createLinearGradient(-size, -size, size, size);
+            g.addColorStop(0, "#fbc2eb"); g.addColorStop(0.5, "#a6c1ee"); g.addColorStop(1, "#fbc2eb");
+            ctx.fillStyle = g; ctx.shadowColor = "rgba(255,255,255,0.8)"; ctx.shadowBlur = size * 0.3;
+            ctx.beginPath(); ctx.arc(0, 0, size, 0.3 * Math.PI, 1.7 * Math.PI);
+            ctx.quadraticCurveTo(size * 0.4, 0, size * Math.cos(0.3 * Math.PI), size * Math.sin(0.3 * Math.PI));
+            ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.ellipse(-size*0.4, -size*0.4, size*0.3, size*0.1, Math.PI/4, 0, Math.PI*2); ctx.fill();
+            break;
+        }
+
+        // Group 2: Coquette Ribbons
+        case 'coquette_ribbon_pink': {
+            ctx.fillStyle = "#FFC0CB"; ctx.shadowColor = "#D22B2B"; ctx.shadowBlur = size * 0.05;
+            for (let s of [-1, 1]) {
+                ctx.save(); ctx.scale(s, 1);
+                ctx.beginPath(); ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-size, -size, -size * 1.5, size * 0.5, 0, 0);
+                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-size*0.2, size*0.5, -size*0.8, size*1.2, -size*0.5, size*1.5);
+                ctx.lineWidth = size*0.2; ctx.strokeStyle = "#FFC0CB"; ctx.stroke();
+                ctx.restore();
+            }
+            const knot = ctx.createRadialGradient(0, 0, 0, 0, 0, size*0.3);
+            knot.addColorStop(0, "#FFB6C1"); knot.addColorStop(1, "#FF69B4");
+            ctx.fillStyle = knot; ctx.beginPath(); ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2); ctx.fill();
+            break;
+        }
+        case 'coquette_ribbon_blue': {
+            ctx.save();
+            ctx.beginPath(); ctx.ellipse(0, 0, size, size * 0.6, 0, 0, Math.PI * 2); ctx.clip();
+            ctx.fillStyle = "#E0F2FE"; ctx.fillRect(-size, -size, size * 2, size * 2);
+            ctx.fillStyle = "rgba(59, 130, 246, 0.4)";
+            const step = size * 0.25;
+            for (let i = -size*2; i < size*2; i += step) {
+                ctx.fillRect(i, -size*2, step/2, size*4);
+                ctx.fillRect(-size*2, i, size*4, step/2);
+            }
+            ctx.restore();
+            ctx.strokeStyle = "white"; ctx.lineWidth = size * 0.1; ctx.stroke();
+            break;
+        }
+
+        // Group 3: Purikura Doodles (White + Pink Outline)
+        case 'purikura_doodle_sparkle': {
+            ctx.strokeStyle = "white"; ctx.lineWidth = size * 0.2; ctx.lineCap = "round";
+            ctx.shadowColor = "#FF69B4"; ctx.shadowBlur = size * 0.3;
+            ctx.beginPath(); ctx.moveTo(0, -size); ctx.lineTo(0, size); ctx.moveTo(-size, 0); ctx.lineTo(size, 0); ctx.stroke();
+            ctx.lineWidth = size * 0.1; ctx.beginPath(); ctx.moveTo(-size*0.5, -size*0.5); ctx.lineTo(size*0.5, size*0.5); ctx.moveTo(size*0.5, -size*0.5); ctx.lineTo(-size*0.5, size*0.5); ctx.stroke();
+            break;
+        }
+        case 'purikura_doodle_heart': {
+            ctx.strokeStyle = "white"; ctx.lineWidth = size * 0.15; ctx.lineCap = "round";
+            ctx.shadowColor = "#FF69B4"; ctx.shadowBlur = size * 0.2;
+            ctx.beginPath(); ctx.moveTo(0, size * 0.4);
+            ctx.bezierCurveTo(-size, -size * 0.5, -size * 0.5, -size, 0, -size * 0.3);
+            ctx.bezierCurveTo(size * 0.5, -size, size, -size * 0.5, 0, size * 0.4);
+            ctx.stroke();
+            break;
+        }
+        case 'purikura_doodle_whiskers': {
+            ctx.strokeStyle = "white"; ctx.lineWidth = size * 0.1; ctx.shadowColor = "#FF69B4"; ctx.shadowBlur = 8;
+            for (let s of [-1, 1]) {
+                ctx.save(); ctx.scale(s, 1);
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath(); ctx.moveTo(size * 0.2, (i - 1) * size * 0.15);
+                    ctx.lineTo(size * 0.9, (i - 1.5) * size * 0.3); ctx.stroke();
+                }
+                ctx.restore();
+            }
+            break;
+        }
+
+        // Group 4: Cyber Pets (Liquid Metal 3D Spheres)
+        case 'cyber_pet_bear': {
+            const drawBall = (x: number, y: number, r: number) => {
+                const g = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
+                g.addColorStop(0, "#FFFFFF"); g.addColorStop(0.5, "#808080"); g.addColorStop(1, "#202020");
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+            };
+            drawBall(0, 0, size * 0.8); // Body
+            drawBall(-size*0.6, -size*0.6, size*0.35); // Ear L
+            drawBall(size*0.6, -size*0.6, size*0.35); // Ear R
+            ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(-size*0.2, -size*0.1, size*0.08, 0, Math.PI*2); ctx.arc(size*0.2, -size*0.1, size*0.08, 0, Math.PI*2); ctx.fill();
+            break;
+        }
+        case 'cyber_pet_bunny': {
+            const drawBall = (x: number, y: number, r: number, color: string = "#A0A0A0") => {
+                const g = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
+                g.addColorStop(0, "#FFFFFF"); g.addColorStop(0.4, color); g.addColorStop(1, "#303030");
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+            };
+            drawBall(0, size*0.2, size*0.7, "#E9D5FF"); // Face
+            ctx.save(); ctx.translate(-size*0.3, -size*0.4); ctx.rotate(-0.1); 
+            ctx.beginPath(); ctx.ellipse(0, 0, size*0.2, size*0.7, 0, 0, Math.PI*2); 
+            const eg = ctx.createRadialGradient(-size*0.1, -size*0.2, 0, 0, 0, size*0.7);
+            eg.addColorStop(0, "#fff"); eg.addColorStop(1, "#E9D5FF");
+            ctx.fillStyle = eg; ctx.fill(); ctx.restore();
+            ctx.save(); ctx.translate(size*0.3, -size*0.4); ctx.rotate(0.1); 
+            ctx.beginPath(); ctx.ellipse(0, 0, size*0.2, size*0.7, 0, 0, Math.PI*2); 
+            ctx.fillStyle = eg; ctx.fill(); ctx.restore();
+            break;
+        }
+
+        // Group 5: Xmas Party (Vintage Illustration)
+        case 'xmas_party_hat': {
+            ctx.fillStyle = "#C4423F"; ctx.strokeStyle = "#4A3328"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(-size, size * 0.4); 
+            ctx.quadraticCurveTo(0, -size * 1.5, size * 0.8, -size * 0.6); 
+            ctx.lineTo(size, size * 0.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+            // Fuzzy ball
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(size * 0.8, -size * 0.6, size * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            // Fur trim
+            ctx.beginPath(); ctx.roundRect(-size * 1.1, size * 0.4, size * 2.2, size * 0.4, 20); ctx.fill(); ctx.stroke();
+            break;
+        }
+        case 'xmas_party_antlers': {
+            ctx.strokeStyle = "#5C3D2E"; ctx.lineWidth = size * 0.15; ctx.lineCap = "round";
+            for (let s of [-1, 1]) {
+                ctx.save(); ctx.scale(s, 1);
+                ctx.beginPath(); ctx.moveTo(size * 0.1, size); ctx.quadraticCurveTo(size * 0.3, 0, size * 0.6, -size * 0.5);
+                ctx.moveTo(size * 0.4, size * 0.3); ctx.lineTo(size * 0.85, size * 0.1);
+                ctx.moveTo(size * 0.5, -size * 0.1); ctx.lineTo(size * 0.9, -size * 0.4);
+                ctx.stroke(); ctx.restore();
+            }
+            break;
+        }
+        default:
+            ctx.font = `${size}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText("✨", 0, 0);
+    }
+    ctx.restore();
+};
+
+/**
  * DECORATION DRAWING HELPERS
  */
 const draw3DTitle = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, fontSize: number, mainColor: string, shadowColor: string) => {
@@ -40,13 +197,13 @@ const drawHandDrawnStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number
  * RENDER COMPOSITE
  */
 export const renderComposite = (params: RenderParams) => {
-    const { canvas, personImage, backgroundImage, frameImage, lightingEnabled, noiseLevel, filmLookStrength, showDate, decorations, selectedStickerId, imageTransform, isMoeMode, aspectRatio, isImageFit } = params;
+    const { canvas, personImage, backgroundImage, frameImage, lightingEnabled, noiseLevel, filmLookStrength, showDate, decorations, imageTransform, isMoeMode, aspectRatio, isImageFit, selectedStickerId } = params;
     const ctx = canvas.getContext('2d')!;
     const TW = 1000;
     const TH = aspectRatio ? 1000 / aspectRatio : 1333; 
     canvas.width = TW; canvas.height = TH;
 
-    // Background - Fixed Gradient Support
+    // Background
     if (backgroundImage?.type === 'gradient') {
         const g = ctx.createLinearGradient(0, 0, TW, TH);
         if (backgroundImage.id === 'bg-grad-1') {
@@ -82,19 +239,32 @@ export const renderComposite = (params: RenderParams) => {
         ctx.restore();
     }
 
-    // Stickers & Drawing
+    // Drawing & Stickers
     if (decorations) {
+        // Strokes
         decorations.strokes.forEach(s => {
             ctx.beginPath(); ctx.lineWidth = s.width; ctx.strokeStyle = s.color;
             if (s.isNeon) { ctx.shadowBlur = 15; ctx.shadowColor = s.color; }
             s.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
             ctx.stroke(); ctx.shadowBlur = 0;
         });
+        
+        // Stickers
         decorations.stickers.forEach(s => {
-            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rotation); ctx.scale(s.scale * (s.isFlipped ? -1 : 1), s.scale);
-            ctx.font = "80px sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText("✨", 0, 0); 
-            if (selectedStickerId === s.id) { ctx.strokeStyle = '#3b82f6'; ctx.setLineDash([10,5]); ctx.strokeRect(-60,-60,120,120); }
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(s.rotation);
+            ctx.scale(s.scale * (s.isFlipped ? -1 : 1), s.scale);
+            
+            drawStickerAsset(ctx, s.content, 80);
+            
+            // Selection Handle
+            if (selectedStickerId === s.id) {
+                ctx.strokeStyle = '#3b82f6'; ctx.setLineDash([10,5]); ctx.lineWidth = 4;
+                ctx.strokeRect(-100, -100, 200, 200);
+                ctx.setLineDash([]); ctx.fillStyle = '#3b82f6'; 
+                ctx.beginPath(); ctx.arc(100, 100, 20, 0, Math.PI*2); ctx.fill(); // Transform handle
+            }
             ctx.restore();
         });
     }
@@ -248,5 +418,3 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
     }
     return results;
 };
-
-export const STICKER_BASE_SIZE = 150; export const STICKER_HANDLE_RADIUS = 24;

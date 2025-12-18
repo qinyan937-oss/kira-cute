@@ -24,12 +24,25 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
 export const PEN_COLORS = ['#FFFFFF', '#000000', '#FF69B4', '#87CEFA', '#FFD700', '#98FB98'];
 
 export const STICKER_CATEGORIES = {
-  HATS: [{ id: 'hat_santa_classic', label: 'Santa' }],
-  Y2K: [{ id: 'y2k_star_silver', label: 'Silver Star' }],
-  RIBBON: [{ id: 'ribbon_red_satin', label: 'Red Satin' }],
-  DOODLE: [{ id: 'doodle_sparkle', label: 'Sparkles' }],
-  RETRO: [{ id: 'retro_tree', label: 'Xmas Tree' }],
-  CYBER: [{ id: 'cyber_bear', label: 'Chrome Bear' }]
+  Y2K: [
+    { id: 'y2k_galactic_star', label: 'Star' },
+    { id: 'y2k_galactic_moon', label: 'Moon' }
+  ],
+  RIBBON: [
+    { id: 'coquette_ribbon_pink', label: 'Pink Silk' },
+    { id: 'coquette_ribbon_blue', label: 'Blue Gingham' }
+  ],
+  DOODLE: [
+    { id: 'purikura_doodle_sparkle', label: 'Sparkle' },
+    { id: 'purikura_doodle_heart', label: 'Heart' },
+    { id: 'purikura_doodle_whiskers', label: 'Whiskers' }
+  ],
+  CYBER: [
+    { id: 'cyber_pet_bear', label: 'Liquid Bear' },
+    { id: 'cyber_pet_bunny', label: 'Laser Bunny' }
+  ],
+  XMAS: [
+    { id: 'xmas_party_hat', label: 'Santa Hat' },
+    { id: 'xmas_party_antlers', label: 'Antlers' }
+  ]
 };
-
-export const ALL_STICKER_IDS = Object.values(STICKER_CATEGORIES).flat().map(s => s.id);
