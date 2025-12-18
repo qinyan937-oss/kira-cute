@@ -33,7 +33,6 @@
       }
 
       /* --- Updated 3D Text Effect (Crisper for Chinese) --- */
-      /* Creates a white outline first, then the color shadow */
       .text-3d {
         color: #ec4899; /* Pink-500 */
         text-shadow: 
@@ -62,6 +61,20 @@
           -2px  2px 0 #ec4899,
            2px  2px 0 #ec4899, /* Pink Outline */
            4px  4px 0 rgba(0,0,0,0.1);
+      }
+
+      /* --- 3D Jelly Style matching user's reference image with reduced white parts --- */
+      .text-jelly {
+        color: #3b82f6;
+        text-shadow: 
+          1.5px 1.5px 0 #fff,
+          -1.5px -1.5px 0 #fff,
+          1.5px -1.5px 0 #fff,
+          -1.5px 1.5px 0 #fff,
+          0px 3px 0 #fff,
+          0px 5px 10px rgba(59, 130, 246, 0.3);
+        font-weight: 900;
+        letter-spacing: 0.02em;
       }
 
       /* --- Candy Range Slider --- */

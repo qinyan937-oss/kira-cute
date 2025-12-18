@@ -11,7 +11,7 @@ import Button from './components/Button';
 const TRANSLATIONS = {
   en: {
     appTitle: "KIRA",
-    appSubtitle: "3D GUMMY KIRA",
+    appSubtitle: "Capture Your Shine",
     shots: "Shot",
     shots_plural: "Shots",
     tpl_cinema: "Life4Cuts",
@@ -65,7 +65,7 @@ const TRANSLATIONS = {
   },
   zh: {
     appTitle: "KIRA 闪闪",
-    appSubtitle: "3D 果冻字",
+    appSubtitle: "记录闪耀时刻",
     shots: "张",
     shots_plural: "张",
     tpl_cinema: "人生四格",
@@ -540,7 +540,31 @@ const App = () => {
   const generateFinal = async () => {
       setAppState(AppState.PROCESSING);
       setSelectedStickerId(null);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for React to clear handles, then perform a manual clean render pass on all canvases
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      uploadedImages.forEach((img, idx) => {
+          const canvas = canvasRefs.current[idx];
+          if (canvas) {
+              renderComposite({
+                  canvas,
+                  personImage: img,
+                  backgroundImage: currentBg,
+                  frameImage: currentFrameImage, 
+                  lightingEnabled,
+                  noiseLevel,
+                  filmLookStrength,
+                  showDate,
+                  decorations: decorations[idx],
+                  imageTransform: imageTransforms[idx],
+                  selectedStickerId: null, // Force no selection handles
+                  isMoeMode, 
+                  aspectRatio: selectedTemplate.aspectRatio,
+                  isImageFit
+              });
+          }
+      });
+      
       try {
           const validCanvases = canvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null && c instanceof HTMLCanvasElement && c.width > 0 && c.height > 0);
           const urls = generateLayoutSheet(validCanvases, selectedTemplate.id, customLocation, customName, customDate);
@@ -567,7 +591,7 @@ const App = () => {
           <div className="absolute bottom-20 right-10 text-6xl opacity-30 animate-bounce-soft pointer-events-none">🎀</div>
           <div className="z-10 text-center mb-10">
               <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
-              <p className="text-3xl md:text-5xl font-black text-3d-blue animate-bounce-soft mt-2">
+              <p className="text-3xl md:text-5xl font-black text-jelly animate-bounce-soft mt-2">
                   {t.appSubtitle}
               </p>
           </div>
@@ -723,10 +747,19 @@ const App = () => {
   );
 
   const renderLayout = () => (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 pb-32">
-           <h2 className="text-white font-black text-4xl mb-8 animate-bounce text-3d-white">{t.ready_msg}</h2>
-           <div className="flex flex-wrap gap-8 items-center justify-center">{finalLayoutUrls.map((url, i) => <div key={i} className="flex flex-col items-center gap-4"><div className="bg-white p-2 rounded-sm shadow-2xl max-h-[60vh] overflow-hidden"><img src={url} className="max-h-full" /></div><Button onClick={() => handleDownload(url, i)} size="sm">{t.save_btn}</Button></div>)}</div>
-           <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-900/90 backdrop-blur-lg flex justify-center z-50"><div className="max-w-md w-full"><Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.EDIT)}>← {t.back}</Button></div></div>
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 overflow-y-auto">
+           <h2 className="text-white font-black text-4xl mt-8 mb-8 animate-bounce text-3d-white flex-shrink-0">{t.ready_msg}</h2>
+           <div className="flex flex-wrap gap-8 items-center justify-center flex-grow mb-32 max-w-7xl mx-auto">
+             {finalLayoutUrls.map((url, i) => (
+               <div key={i} className="flex flex-col items-center gap-4">
+                 <div className="bg-white p-2 rounded-sm shadow-2xl max-h-[65vh] flex items-center justify-center overflow-hidden">
+                   <img src={url} className="max-h-full max-w-full w-auto object-contain" />
+                 </div>
+                 <Button onClick={() => handleDownload(url, i)} size="sm">{t.save_btn}</Button>
+               </div>
+             ))}
+           </div>
+           <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-900/95 backdrop-blur-lg flex justify-center z-50 border-t border-white/10"><div className="max-w-md w-full"><Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.EDIT)}>← {t.back}</Button></div></div>
       </div>
   );
 

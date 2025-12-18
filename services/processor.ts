@@ -318,7 +318,7 @@ export const renderComposite = (params: RenderParams) => {
  */
 export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: string, loc: string, name: string, date: string): string[] => {
     const results: string[] = [];
-    const SAVE_SCALE = 0.7; // Scale everything down to 70% for optimized save size
+    const SAVE_SCALE = 0.6; // Reduced slightly more for optimized mobile storage/speed
 
     if (templateId === 'cinema') {
         const styles = [
@@ -342,7 +342,7 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
             draw3DTitle(ctx, "KIRA", 300, 1660, 90, style.accent, '#fff');
             ctx.fillStyle = '#99aabb'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'center';
             ctx.fillText(date, 300, 1740);
-            results.push(sheet.toDataURL('image/png'));
+            results.push(sheet.toDataURL('image/jpeg', 0.85)); // Using JPEG for smaller file size
         });
         
     } else {
@@ -369,7 +369,7 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
             drawHandDrawnStar(ctx, 1040, 1230, 35, 16, '#f472b6'); 
             
             draw3DTitle(ctx, "KIRA", 550, 1180, 110, '#fff', '#60a5fa');
-            results.push(sheet.toDataURL('image/png'));
+            results.push(sheet.toDataURL('image/jpeg', 0.85));
 
         } else if (templateId === 'driver_license') {
             sheet.width = 1000 * SAVE_SCALE; sheet.height = 630 * SAVE_SCALE;
@@ -403,7 +403,7 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
             
             ctx.font = '48px "Dancing Script", cursive'; 
             ctx.fillStyle = 'black'; ctx.fillText(name, 120, 595);
-            results.push(sheet.toDataURL('image/png'));
+            results.push(sheet.toDataURL('image/jpeg', 0.85));
 
         } else if (templateId === 'standard') {
             sheet.width = 1200 * SAVE_SCALE; sheet.height = 800 * SAVE_SCALE;
@@ -423,47 +423,33 @@ export const generateLayoutSheet = (canvases: HTMLCanvasElement[], templateId: s
                     ctx.drawImage(c, 70 + i*175, 530, 150, 210);
                 }
 
-                // RIGHT INFO BOX - HORIZONTAL DESIGN AS REQUESTED
+                // RIGHT INFO BOX
                 const boxX = 820, boxY = 90, boxW = 310, boxH = 650;
                 ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 3;
                 ctx.fillRect(boxX, boxY, boxW, boxH);
                 ctx.strokeRect(boxX, boxY, boxW, boxH);
 
                 ctx.textAlign = 'center';
-                
-                // Camera Icon
                 ctx.font = '50px sans-serif';
                 ctx.fillText("📷", boxX + boxW/2, boxY + 80);
-
-                // Main Title
                 ctx.fillStyle = '#1e3a8a';
                 ctx.font = '900 34px serif';
                 ctx.fillText("証明写真", boxX + boxW/2, boxY + 140);
                 ctx.font = '900 24px serif';
                 ctx.fillText("(ID PHOTO)", boxX + boxW/2, boxY + 180);
-
-                // Perfect Quality Star text
                 ctx.font = 'bold 18px sans-serif';
                 ctx.fillText("★ PERFECT QUALITY ★", boxX + boxW/2, boxY + 230);
-
-                // Horizontal Line
                 ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(boxX + 40, boxY + 250); ctx.lineTo(boxX + boxW - 40, boxY + 250); ctx.stroke();
-
-                // Detailed Typography
                 ctx.fillStyle = '#334155'; ctx.font = 'bold 16px monospace';
                 ctx.fillText(`DATE: ${date}`, boxX + boxW/2, boxY + 290);
-                // Ensure Location fits
                 const safeLoc = loc.length > 20 ? loc.substring(0, 17) + "..." : loc;
                 ctx.fillText(`LOC: ${safeLoc}`, boxX + boxW/2, boxY + 325);
-                
                 ctx.fillStyle = '#94a3b8'; ctx.font = 'italic 14px serif';
                 ctx.fillText("NO. 001-A4", boxX + boxW/2, boxY + 360);
-
-                // BOTTOM PHOTO
                 ctx.drawImage(c, boxX + boxW/2 - 95, boxY + 420, 190, 190);
             }
-            results.push(sheet.toDataURL('image/png'));
+            results.push(sheet.toDataURL('image/jpeg', 0.85));
         }
     }
     return results;
