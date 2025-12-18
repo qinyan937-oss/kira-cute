@@ -228,7 +228,16 @@ export const renderComposite = (params: RenderParams) => {
         const dx = (TW - imgW * finalScale)/2 + (imageTransform?.x || 0);
         const dy = (TH - imgH * finalScale)/2 + (imageTransform?.y || 0);
 
-        if (lightingEnabled) ctx.filter = "brightness(1.08) saturate(1.15) contrast(0.95)";
+        // Apply filters
+        let filterStr = "";
+        if (lightingEnabled) filterStr += "brightness(1.08) saturate(1.15) contrast(0.95) ";
+        
+        // Film Look affects contrast and color tone
+        if (filmLookStrength && filmLookStrength > 0) {
+            filterStr += `contrast(${1 - filmLookStrength * 0.15}) saturate(${1 - filmLookStrength * 0.1}) sepia(${filmLookStrength * 0.1}) `;
+        }
+        
+        ctx.filter = filterStr || "none";
         ctx.drawImage(personImage, dx, dy, imgW*finalScale, imgH*finalScale);
         ctx.filter = "none";
         
@@ -236,6 +245,38 @@ export const renderComposite = (params: RenderParams) => {
             ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.filter = "blur(12px)"; ctx.globalAlpha = 0.3;
             ctx.drawImage(personImage, dx, dy, imgW*finalScale, imgH*finalScale); ctx.restore();
         }
+        ctx.restore();
+    }
+
+    // Apply Grain (Noise)
+    if (noiseLevel && noiseLevel > 0) {
+        ctx.save();
+        ctx.globalAlpha = noiseLevel * 0.3;
+        // Draw tiny random pixels for grain effect
+        for (let i = 0; i < 4000; i++) {
+            const x = Math.random() * TW;
+            const y = Math.random() * TH;
+            const size = Math.random() * 1.5 + 1;
+            ctx.fillStyle = Math.random() > 0.5 ? '#fff' : '#000';
+            ctx.fillRect(x, y, size, size);
+        }
+        ctx.restore();
+    }
+
+    // Apply Film Tone Overlays
+    if (filmLookStrength && filmLookStrength > 0) {
+        ctx.save();
+        // Warm/Pink Vintage Overlay
+        ctx.globalCompositeOperation = 'soft-light';
+        ctx.globalAlpha = filmLookStrength * 0.35;
+        ctx.fillStyle = '#ff9a9e'; // Pinkish tint
+        ctx.fillRect(0, 0, TW, TH);
+        
+        // Slight Amber Burn
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.globalAlpha = filmLookStrength * 0.1;
+        ctx.fillStyle = '#f6d365'; // Amber tint
+        ctx.fillRect(0, 0, TW, TH);
         ctx.restore();
     }
 

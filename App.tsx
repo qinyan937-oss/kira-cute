@@ -653,7 +653,33 @@ const App = () => {
                   {activeTab === 'adjust' && (
                       <div className="animate-fade-in space-y-5">
                         <div className="grid grid-cols-2 gap-3"><Button variant={lightingEnabled ? 'primary' : 'outline'} onClick={() => setLightingEnabled(!lightingEnabled)} size="sm"><Icons.Wand /><span className="ml-2">{t.beauty_filter}</span></Button><Button variant={isMoeMode ? 'secondary' : 'outline'} onClick={() => setIsMoeMode(!isMoeMode)} size="sm"><Icons.Sparkles /><span className="ml-2">{t.moe_magic}</span></Button></div>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100"><label className="text-xs font-bold text-slate-500 mb-2 block">Photo Scale</label><input type="range" min="0.5" max="2" step="0.1" value={imageTransforms[activeImageIndex].scale} onChange={(e) => { const newT = [...imageTransforms]; newT[activeImageIndex].scale = parseFloat(e.target.value); setImageTransforms(newT); }} /></div>
+                        
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                             <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-slate-500">Photo Scale</label></div>
+                             <input type="range" min="0.5" max="2" step="0.1" value={imageTransforms[activeImageIndex].scale} onChange={(e) => { const newT = [...imageTransforms]; newT[activeImageIndex].scale = parseFloat(e.target.value); setImageTransforms(newT); }} />
+                        </div>
+
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                             <div className="flex justify-between items-center mb-2">
+                                 <label className="text-xs font-bold text-slate-500">{t.retro_grain}</label>
+                                 <span className="text-[10px] font-bold text-slate-400">{(noiseLevel * 100).toFixed(0)}%</span>
+                             </div>
+                             <input type="range" min="0" max="1" step="0.1" value={noiseLevel} onChange={(e) => setNoiseLevel(parseFloat(e.target.value))} />
+                        </div>
+
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                             <div className="flex justify-between items-center mb-2">
+                                 <label className="text-xs font-bold text-slate-500">{t.film_look}</label>
+                                 <span className="text-[10px] font-bold text-slate-400">{(filmLookStrength * 100).toFixed(0)}%</span>
+                             </div>
+                             <input type="range" min="0" max="1" step="0.1" value={filmLookStrength} onChange={(e) => setFilmLookStrength(parseFloat(e.target.value))} />
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                             <label className="text-sm font-bold text-slate-600">{t.date_stamp}</label>
+                             <input type="checkbox" checked={showDate} onChange={(e) => setShowDate(e.target.checked)} className="w-6 h-6 accent-pink-500" />
+                        </div>
+                        
                         <div className="space-y-3 pt-4"><label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Background</label><div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">{BACKGROUND_PRESETS.map(bg => <button key={bg.id} onClick={() => setCurrentBg(bg)} className={`w-10 h-10 rounded-full border-4 flex-shrink-0 shadow-md ${currentBg.id === bg.id ? 'border-pink-500 scale-110' : 'border-white'}`} style={{ background: bg.value }} />)}</div></div>
                       </div>
                   )}
