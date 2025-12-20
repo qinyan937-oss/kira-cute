@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, ImageTransform, StickerItem } from './types';
 import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, PEN_COLORS, STICKER_CATEGORIES } from './constants';
@@ -273,7 +272,6 @@ const App = () => {
         const fileName = `KIRA_${index}_${Date.now()}.png`;
         const file = new File([blob], fileName, { type: 'image/png' });
 
-        // Try Web Share API first (Best for iPad/iOS)
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
                 files: [file],
@@ -283,7 +281,6 @@ const App = () => {
             return;
         }
 
-        // Fallback for desktop or non-sharing browsers
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
@@ -294,7 +291,6 @@ const App = () => {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
     } catch (e) {
         console.error("Save failed", e);
-        // Last resort
         const a = document.createElement('a');
         a.href = dataUrl;
         a.download = `KIRA_${index}.png`;
@@ -438,22 +434,80 @@ const App = () => {
   if (appState === AppState.EDIT) {
       return (
           <div className="fixed inset-0 flex flex-col md:flex-row bg-[#fff0f5] overflow-hidden select-none touch-none">
-              <div className="flex-1 relative flex items-center justify-center p-4 md:p-8 overflow-hidden bg-slate-100/30">
-                  <div className={`grid gap-4 md:gap-8 w-full max-h-[90vh] flex items-center justify-center ${selectedTemplate.slots === 1 ? 'max-w-4xl px-8 md:px-24' : 'max-w-6xl'}`} style={{ gridTemplateColumns: selectedTemplate.slots > 1 ? '1fr 1fr' : '1fr' }}>
-                      {uploadedImages.map((_, idx) => (
-                          <div key={idx} className={`relative rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-[8px] md:border-[12px] transition-all flex items-center justify-center bg-white ${activeImageIndex === idx ? 'border-pink-400 scale-[1.02] z-10' : 'border-white opacity-90'}`} style={{ aspectRatio: selectedTemplate.aspectRatio }}>
-                              <canvas 
-                                ref={el => { canvasRefs.current[idx] = el; }} 
-                                className="w-full h-full object-contain touch-none bg-white cursor-crosshair" 
-                                onPointerDown={e => handlePointerDown(e, idx)} 
-                                onPointerMove={e => handlePointerMove(e, idx)}
-                              />
-                          </div>
-                      ))}
+              {/* Carousel Viewport (Top/Left) */}
+              <div className="flex-1 relative flex items-center justify-center p-2 md:p-12 overflow-hidden bg-slate-100/30">
+                  <div className="relative w-full h-full flex items-center justify-center">
+                      {uploadedImages.map((_, idx) => {
+                          const offset = idx - activeImageIndex;
+                          const isActive = idx === activeImageIndex;
+                          const isPrev = offset === -1;
+                          const isNext = offset === 1;
+                          
+                          // Dynamic layout for stacked peeking effect
+                          let tx = 0, scale = 1, opacity = 1, z = 30;
+                          
+                          if (isActive) {
+                              tx = 0; scale = 1; opacity = 1; z = 30;
+                          } else if (isPrev) {
+                              tx = -45; scale = 0.82; opacity = 0.5; z = 20;
+                          } else if (isNext) {
+                              tx = 45; scale = 0.82; opacity = 0.5; z = 20;
+                          } else {
+                              opacity = 0; z = 10;
+                              tx = offset < 0 ? -100 : 100;
+                          }
+
+                          return (
+                              <div 
+                                key={idx} 
+                                onClick={() => { if (!isActive) { setActiveImageIndex(idx); playSound('pop'); } }}
+                                className={`absolute transition-all duration-500 ease-out flex items-center justify-center bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl border-[6px] md:border-[12px] cursor-pointer overflow-hidden ${isActive ? 'border-pink-400' : 'border-white'}`}
+                                style={{ 
+                                    aspectRatio: selectedTemplate.aspectRatio,
+                                    width: 'auto',
+                                    height: isActive ? '90%' : '75%',
+                                    transform: `translateX(${tx}%) scale(${scale})`,
+                                    opacity,
+                                    zIndex: z,
+                                    pointerEvents: (isActive || isPrev || isNext) ? 'auto' : 'none'
+                                }}
+                              >
+                                  <canvas 
+                                    ref={el => { canvasRefs.current[idx] = el; }} 
+                                    className={`w-full h-full object-contain touch-none bg-white ${isActive ? 'cursor-crosshair' : 'cursor-pointer'}`} 
+                                    onPointerDown={e => { if(isActive) handlePointerDown(e, idx); }} 
+                                    onPointerMove={e => { if(isActive) handlePointerMove(e, idx); }}
+                                  />
+                              </div>
+                          );
+                      })}
+
+                      {/* Carousel Arrows */}
+                      {uploadedImages.length > 1 && (
+                          <>
+                              {activeImageIndex > 0 && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setActiveImageIndex(prev => prev - 1); playSound('pop'); }}
+                                    className="absolute left-4 md:left-8 z-50 w-12 h-12 md:w-16 md:h-16 bg-white/30 hover:bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center text-pink-500 border-2 border-white/50 shadow-xl transition-all active:scale-90"
+                                  >
+                                    <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                  </button>
+                              )}
+                              {activeImageIndex < uploadedImages.length - 1 && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setActiveImageIndex(prev => prev + 1); playSound('pop'); }}
+                                    className="absolute right-4 md:right-8 z-50 w-12 h-12 md:w-16 md:h-16 bg-white/30 hover:bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center text-pink-500 border-2 border-white/50 shadow-xl transition-all active:scale-90"
+                                  >
+                                    <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                  </button>
+                              )}
+                          </>
+                      )}
                   </div>
               </div>
 
-              <div className="w-full md:w-[450px] bg-white/95 backdrop-blur-3xl flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.08)] z-30 h-[45vh] md:h-full border-t md:border-t-0 md:border-l border-white/50">
+              {/* Sidebar / Bottom Panel */}
+              <div className="w-full md:w-[450px] bg-white/95 backdrop-blur-3xl flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.08)] z-[60] h-[45vh] md:h-full border-t md:border-t-0 md:border-l border-white/50">
                   <div className="flex-none p-4 md:p-6 pb-0">
                       <div className="flex justify-between bg-slate-100/80 p-1.5 rounded-[2.5rem] border border-slate-200/50">
                           {[
@@ -481,7 +535,6 @@ const App = () => {
                                   <Button variant={lightingEnabled ? 'primary':'outline'} onClick={()=>setLightingEnabled(!lightingEnabled)} className="h-12 rounded-2xl text-base">{t.beauty_filter}</Button>
                                   <Button variant={isMoeMode ? 'secondary':'outline'} onClick={()=>setIsMoeMode(!isMoeMode)} className="h-12 rounded-2xl text-base">{t.moe_magic}</Button>
                               </div>
-                              
                               <div className="space-y-3">
                                   <span className="font-black text-slate-500 text-xs uppercase tracking-widest">{t.tab_bg}</span>
                                   <div className="grid grid-cols-5 gap-2">
@@ -495,7 +548,6 @@ const App = () => {
                                       ))}
                                   </div>
                               </div>
-
                               <div className="space-y-4">
                                   <div className="flex justify-between font-black text-slate-500 text-sm"><span>胶片颗粒</span><span>{Math.round(noiseLevel*100)}%</span></div>
                                   <input type="range" min="0" max="0.5" step="0.01" value={noiseLevel} onChange={e=>setNoiseLevel(parseFloat(e.target.value))} />
@@ -508,10 +560,9 @@ const App = () => {
                                       setImageTransforms(trs);
                                   }} />
                               </div>
-
                               <div className="space-y-4 pt-2 border-t border-slate-100">
                                   <div className="space-y-2">
-                                      <label className="font-black text-slate-500 text-xs uppercase tracking-widest block">{lang === 'zh' ? '姓名 (用于驾照/证件照)' : 'NAME (FOR LICENSE/ID)'}</label>
+                                      <label className="font-black text-slate-500 text-xs uppercase tracking-widest block">{lang === 'zh' ? '姓名' : 'NAME'}</label>
                                       <input 
                                           type="text" 
                                           value={customName} 
@@ -520,18 +571,7 @@ const App = () => {
                                           placeholder="KIRA USER"
                                       />
                                   </div>
-                                  <div className="space-y-2">
-                                      <label className="font-black text-slate-500 text-xs uppercase tracking-widest block">{lang === 'zh' ? '地点 (用于证件照)' : 'LOCATION (FOR ID)'}</label>
-                                      <input 
-                                          type="text" 
-                                          value={customLocation} 
-                                          onChange={e => setCustomLocation(e.target.value)} 
-                                          className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-pink-300 outline-none font-black text-slate-700 bg-slate-50/50"
-                                          placeholder="SHANGHAI"
-                                      />
-                                  </div>
                               </div>
-
                               <div className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                                   <span className="font-black text-slate-600 text-sm uppercase">{t.date_stamp}</span>
                                   <button onClick={() => setDateStampEnabled(!dateStampEnabled)} className={`w-14 h-8 rounded-full transition-colors relative ${dateStampEnabled ? 'bg-pink-400' : 'bg-slate-200'}`}>
@@ -545,19 +585,13 @@ const App = () => {
                               {FRAME_PRESETS.map(f => (
                                 <button key={f.id} onClick={async ()=> { 
                                     const img = f.src ? await loadImage(f.src) : null; 
-                                    setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                                        ...dec,
-                                        frameImage: img
-                                    } : dec));
+                                    setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? { ...dec, frameImage: img } : dec));
                                     playSound('pop'); 
                                 }} className={`aspect-[3/4] bg-white rounded-2xl overflow-hidden border-4 transition-all hover:scale-105 ${decorations[activeImageIndex].frameImage?.src === f.src ? 'border-pink-400 shadow-xl' : 'border-slate-100'}`}>
                                     {f.src ? <img src={f.src} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-black text-slate-300">NONE</div>}
                                 </button>
                               ))}
-                              <button 
-                                onClick={() => frameUploadRef.current?.click()}
-                                className="aspect-[3/4] bg-pink-50 rounded-2xl border-4 border-dashed border-pink-200 flex flex-col items-center justify-center text-pink-300 hover:text-pink-400 hover:border-pink-300 transition-all"
-                              >
+                              <button onClick={() => frameUploadRef.current?.click()} className="aspect-[3/4] bg-pink-50 rounded-2xl border-4 border-dashed border-pink-200 flex flex-col items-center justify-center text-pink-300 hover:text-pink-400 transition-all">
                                   <svg className="w-8 h-8 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                   <span className="font-black text-xs uppercase">{t.custom_frame}</span>
                               </button>
@@ -574,14 +608,11 @@ const App = () => {
                                   {PEN_COLORS.map(c => <button key={c} onClick={()=>setCurrentPenColor(c)} className={`w-10 h-10 rounded-full border-4 transition-transform ${currentPenColor===c?'border-slate-700 scale-110 shadow-lg':'border-white hover:scale-105'}`} style={{backgroundColor:c}}/>)}
                               </div>
                               <div className="space-y-4">
-                                <div className="flex justify-between font-black text-slate-500 text-sm"><span>笔头大小</span><span>{brushSize}px</span></div>
+                                <div className="flex justify-between font-black text-slate-500 text-sm"><span>笔头</span><span>{brushSize}px</span></div>
                                 <input type="range" min="8" max="100" value={brushSize} onChange={e=>setBrushSize(parseInt(e.target.value))} />
                               </div>
                               <Button fullWidth variant="outline" onClick={()=>{
-                                setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                                  ...dec,
-                                  strokes: dec.strokes.slice(0, -1)
-                                } : dec));
+                                setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? { ...dec, strokes: dec.strokes.slice(0, -1) } : dec));
                               }} className="h-14 rounded-2xl text-xl font-black">✨ {t.undo}</Button>
                           </div>
                       )}
@@ -589,67 +620,24 @@ const App = () => {
                           <div className="space-y-6 animate-fade-in pb-10">
                               <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
                                 {STICKER_CATEGORIES.map(cat => (
-                                    <button 
-                                      key={cat.id} 
-                                      onClick={() => { setStickerCategory(cat.id); playSound('pop'); }}
-                                      className={`px-4 py-2 rounded-full font-black text-xs whitespace-nowrap transition-all border-2 ${stickerCategory === cat.id ? 'bg-pink-400 text-white border-pink-500 shadow-md scale-105' : 'bg-slate-100 text-slate-400 border-transparent hover:bg-slate-200'}`}
-                                    >
-                                      {cat.name}
-                                    </button>
+                                    <button key={cat.id} onClick={() => { setStickerCategory(cat.id); playSound('pop'); }} className={`px-4 py-2 rounded-full font-black text-xs whitespace-nowrap border-2 ${stickerCategory === cat.id ? 'bg-pink-400 text-white border-pink-500' : 'bg-slate-100 text-slate-400'}`}>{cat.name}</button>
                                 ))}
                               </div>
                               <div className="grid grid-cols-3 gap-3">
                                 {STICKER_CATEGORIES.find(c => c.id === stickerCategory)?.stickers.map(s => (
-                                    <button key={s} onClick={() => addSticker(s)} className="aspect-square bg-slate-50 rounded-2xl border-2 border-slate-200 hover:border-pink-300 hover:scale-105 transition-all p-2 flex items-center justify-center">
-                                      <StickerPreview id={s} />
-                                    </button>
+                                    <button key={s} onClick={() => addSticker(s)} className="aspect-square bg-slate-50 rounded-2xl border-2 border-slate-200 hover:border-pink-300 p-2 flex items-center justify-center"><StickerPreview id={s} /></button>
                                 ))}
                               </div>
                               {selectedStickerId && (
-                                <div className="bg-pink-50 p-4 rounded-3xl space-y-4 border-2 border-pink-100 animate-fade-in shadow-inner">
-                                   <div className="flex justify-between items-center text-sm font-black text-pink-500">
-                                      <span>{t.scale}</span>
-                                      <span>{Math.round((decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1) * 100)}%</span>
-                                   </div>
-                                   <input 
-                                     type="range" 
-                                     min="0.2" 
-                                     max="4" 
-                                     step="0.05" 
-                                     value={decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1} 
-                                     onChange={(e) => {
+                                <div className="bg-pink-50 p-4 rounded-3xl space-y-4 border-2 border-pink-100 shadow-inner">
+                                   <div className="flex justify-between text-sm font-black text-pink-500"><span>{t.scale}</span><span>{Math.round((decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1) * 100)}%</span></div>
+                                   <input type="range" min="0.2" max="4" step="0.05" value={decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1} onChange={(e) => {
                                         const s = parseFloat(e.target.value);
-                                        setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                                          ...dec,
-                                          stickers: (dec.stickers || []).map(st => st.id === selectedStickerId ? { ...st, scale: s } : st)
-                                        } : dec));
-                                     }}
-                                   />
-                                   <div className="flex justify-between items-center text-sm font-black text-pink-500">
-                                      <span>{t.rotation}</span>
-                                      <span>{Math.round((decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.rotation || 0) * (180/Math.PI))}°</span>
-                                   </div>
-                                   <input 
-                                     type="range" 
-                                     min="-3.14159" 
-                                     max="3.14159" 
-                                     step="0.1" 
-                                     value={decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.rotation || 0} 
-                                     onChange={(e) => {
-                                        const r = parseFloat(e.target.value);
-                                        setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                                          ...dec,
-                                          stickers: (dec.stickers || []).map(st => st.id === selectedStickerId ? { ...st, rotation: r } : st)
-                                        } : dec));
-                                     }}
-                                   />
+                                        setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? { ...dec, stickers: dec.stickers.map(st => st.id === selectedStickerId ? { ...st, scale: s } : st) } : dec));
+                                   }} />
                                    <Button variant="danger" fullWidth className="h-12 rounded-2xl" onClick={() => {
-                                      setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                                        ...dec,
-                                        stickers: (dec.stickers || []).filter(st => st.id !== selectedStickerId)
-                                      } : dec));
-                                      setSelectedStickerId(null);
-                                      playSound('cancel');
+                                      setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? { ...dec, stickers: dec.stickers.filter(st => st.id !== selectedStickerId) } : dec));
+                                      setSelectedStickerId(null); playSound('cancel');
                                    }}>{t.delete}</Button>
                                 </div>
                               )}
@@ -657,18 +645,8 @@ const App = () => {
                       )}
                   </div>
                   <div className="flex-none p-6 pt-2 bg-white/80 border-t border-slate-100 flex gap-4">
-                      <button 
-                        onClick={() => { setUploadedImages([]); setAppState(AppState.UPLOAD); playSound('cancel'); }}
-                        className="w-16 h-16 bg-sky-400 hover:bg-sky-300 border-b-6 border-sky-600 active:border-b-0 active:translate-y-1 transition-all rounded-2xl flex flex-col items-center justify-center text-white shrink-0 shadow-lg"
-                      >
-                         <span className="text-xl font-black">←</span>
-                      </button>
-                      <button 
-                        onClick={generateFinal}
-                        className="flex-1 h-16 bg-pink-500 hover:bg-pink-400 border-b-6 border-pink-700 active:border-b-0 active:translate-y-1 transition-all rounded-[1.5rem] flex items-center justify-center text-white text-2xl font-black shadow-lg"
-                      >
-                         {t.finish}
-                      </button>
+                      <button onClick={() => { setUploadedImages([]); setAppState(AppState.UPLOAD); playSound('cancel'); }} className="w-16 h-16 bg-sky-400 border-b-6 border-sky-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"><span className="text-xl font-black">←</span></button>
+                      <button onClick={generateFinal} className="flex-1 h-16 bg-pink-500 border-b-6 border-pink-700 rounded-[1.5rem] flex items-center justify-center text-white text-2xl font-black shadow-lg">{t.finish}</button>
                   </div>
               </div>
           </div>
@@ -678,47 +656,23 @@ const App = () => {
   if (appState === AppState.LAYOUT) {
       return (
           <div className="min-h-screen bg-slate-950 flex flex-col items-center p-8 md:p-10 overflow-y-auto pb-64 relative">
-              {/* Fixed Header with Global message */}
-              <div className="fixed top-0 left-0 right-0 h-24 bg-slate-900/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-8 md:px-12 z-[200] shadow-2xl">
+              <div className="fixed top-0 left-0 right-0 h-24 bg-slate-900/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-8 z-[200] shadow-2xl">
                  <h2 className="text-pink-400 font-black text-2xl md:text-3xl animate-pulse tracking-tight text-center">{t.ready_msg}</h2>
               </div>
-
               <div className="flex flex-row flex-wrap items-start justify-center gap-8 md:gap-16 mt-36 w-full max-w-7xl">
                   {finalLayoutUrls.map((url, i) => (
                       <div key={i} className="flex flex-col items-center gap-6">
-                        {/* Image Frame */}
-                        <div className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-[0_60px_120px_rgba(0,0,0,0.85)] transform hover:scale-[1.01] transition-all duration-700 border-2 border-white/20">
-                            <img 
-                                src={url} 
-                                className="max-h-[85vh] w-auto rounded-xl md:rounded-2xl cursor-pointer" 
-                                alt={`Result ${i}`} 
-                                onContextMenu={(e) => {}} // Allow context menu for long press
-                            />
+                        <div className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-[0_60px_120px_rgba(0,0,0,0.85)] transform border-2 border-white/20">
+                            <img src={url} className="max-h-[85vh] w-auto rounded-xl md:rounded-2xl cursor-pointer" alt={`Result ${i}`} onContextMenu={() => {}} />
                         </div>
-
-                        {/* Save Button Group */}
                         <div className="z-[50] relative pb-4 flex flex-col items-center gap-3">
-                            <Button 
-                                className="h-16 bg-pink-500 border-pink-700 hover:bg-pink-400 rounded-full text-2xl font-black px-16 md:px-24 shadow-[0_15px_40px_rgba(236,72,153,0.6)]"
-                                onClick={() => handleSaveImage(url, i)}
-                            >
-                                {t.save_btn}
-                            </Button>
-                            <p className="text-slate-500 font-black text-sm text-center bg-slate-900/50 py-1.5 px-4 rounded-full border border-white/10 animate-fade-in">
-                                {t.save_hint}
-                            </p>
+                            <Button className="h-16 bg-pink-500 border-pink-700 rounded-full text-2xl font-black px-16 md:px-24 shadow-lg" onClick={() => handleSaveImage(url, i)}>{t.save_btn}</Button>
+                            <p className="text-slate-500 font-black text-sm text-center bg-slate-900/50 py-1.5 px-4 rounded-full border border-white/10 animate-fade-in">{t.save_hint}</p>
                         </div>
                       </div>
                   ))}
-
-                  {/* Back Button */}
                   <div className="mt-8 mb-20 w-full flex justify-center">
-                    <Button 
-                        onClick={() => { setAppState(AppState.EDIT); playSound('pop'); }}
-                        className="h-16 bg-sky-400 hover:bg-sky-300 border-sky-600 rounded-full text-2xl font-black px-24 md:px-32 shadow-[0_15px_40px_rgba(56,189,248,0.4)]"
-                    >
-                        ← {t.back}
-                    </Button>
+                    <Button onClick={() => { setAppState(AppState.EDIT); playSound('pop'); }} className="h-16 bg-sky-400 border-sky-600 rounded-full text-2xl font-black px-24 md:px-32 shadow-lg">← {t.back}</Button>
                   </div>
               </div>
           </div>
@@ -729,9 +683,9 @@ const App = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff0f5]">
         <div className="relative">
             <div className="w-24 h-24 md:w-32 md:h-32 border-[12px] md:border-[16px] border-pink-200 border-t-pink-500 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl animate-bounce">💖</div>
+            <div className="absolute inset-0 flex items-center justify-center text-4xl animate-bounce">💖</div>
         </div>
-        <p className="font-black text-pink-500 text-3xl md:text-5xl mt-12 md:mt-16 animate-pulse tracking-[0.2em] md:tracking-[0.3em] uppercase">{t.loading}</p>
+        <p className="font-black text-pink-500 text-3xl md:text-5xl mt-12 animate-pulse tracking-[0.2em] uppercase">{t.loading}</p>
     </div>
   );
 };
