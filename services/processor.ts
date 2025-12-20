@@ -1,4 +1,3 @@
-
 import { BackgroundPreset, DecorationState, RenderParams, StickerItem } from "../types";
 
 export const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -249,7 +248,7 @@ export const renderComposite = (params: RenderParams) => {
     if (!ctx) return;
 
     const TW = 1000;
-    const TH = aspectRatio ? 1000 / aspectRatio : 1333;
+    const TH = Math.round(aspectRatio ? 1000 / aspectRatio : 1333); // Ensure integer dimensions
     canvas.width = TW; canvas.height = TH;
 
     // 1. Background
@@ -395,14 +394,29 @@ export const renderComposite = (params: RenderParams) => {
 };
 
 const drawSmoothPath = (ctx: CanvasRenderingContext2D, points: any[]) => {
+    if (points.length < 2) return;
+    
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length - 1; i++) {
-        const xc = (points[i].x + points[i + 1].x) / 2;
-        const yc = (points[i].y + points[i + 1].y) / 2;
-        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+
+    if (points.length === 2) {
+        ctx.lineTo(points[1].x, points[1].y);
+    } else {
+        // Corrected midpoint loop for smoother quadratic curves
+        let i;
+        for (i = 1; i < points.length - 2; i++) {
+            const xc = (points[i].x + points[i + 1].x) / 2;
+            const yc = (points[i].y + points[i + 1].y) / 2;
+            ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        // Properly finish the path through the last point
+        ctx.quadraticCurveTo(
+            points[i].x, 
+            points[i].y, 
+            points[i + 1].x, 
+            points[i + 1].y
+        );
     }
-    ctx.lineTo(points[points.length-1].x, points[points.length-1].y);
     ctx.stroke();
 };
 

@@ -140,11 +140,12 @@ const App = () => {
            });
        });
     }
-  }, [appState, uploadedImages, currentBg, lightingEnabled, noiseLevel, contrast, isMoeMode, decorations, imageTransforms, activeImageIndex, dateStampEnabled, selectedStickerId]);
+  }, [appState, uploadedImages, currentBg, lightingEnabled, noiseLevel, contrast, isMoeMode, decorations, imageTransforms, activeImageIndex, dateStampEnabled, selectedStickerId, selectedTemplate]);
 
   const handleTemplateSelect = (tpl: LayoutTemplate) => { 
     setSelectedTemplate(tpl); 
     setUploadedImages([]);
+    setActiveImageIndex(0); // CRITICAL: Reset index when template changes
     setDecorations(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
     setImageTransforms(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
     setAppState(AppState.UPLOAD); 
@@ -224,13 +225,25 @@ const App = () => {
     const py = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     if (interactionMode.current === 'draw') {
-        setDecorations(prev => prev.map((dec, i) => i === idx ? {
-            ...dec,
-            strokes: dec.strokes.map((stroke, si) => si === dec.strokes.length - 1 ? {
-                ...stroke,
-                points: [...stroke.points, { x: px, y: py }]
-            } : stroke)
-        } : dec));
+        const currentStrokes = decorations[idx].strokes;
+        if (currentStrokes.length > 0) {
+            const lastStroke = currentStrokes[currentStrokes.length - 1];
+            const lastPoint = lastStroke.points[lastStroke.points.length - 1];
+            
+            const dist = Math.sqrt(Math.pow(px - lastPoint.x, 2) + Math.pow(py - lastPoint.y, 2));
+            if (dist < 3) return; 
+
+            const smoothedX = lastPoint.x + (px - lastPoint.x) * 0.85;
+            const smoothedY = lastPoint.y + (py - lastPoint.y) * 0.85;
+
+            setDecorations(prev => prev.map((dec, i) => i === idx ? {
+                ...dec,
+                strokes: dec.strokes.map((stroke, si) => si === dec.strokes.length - 1 ? {
+                    ...stroke,
+                    points: [...stroke.points, { x: smoothedX, y: smoothedY }]
+                } : stroke)
+            } : dec));
+        }
     } else if (interactionMode.current === 'sticker_drag' && selectedStickerId) {
         setDecorations(prev => prev.map((dec, i) => i === idx ? {
             ...dec,
@@ -265,36 +278,19 @@ const App = () => {
     playSound('pop');
   };
 
-  const handleSaveImage = async (dataUrl: string, index: number) => {
+  const handleSaveImage = (dataUrl: string, index: number) => {
     try {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
         const fileName = `KIRA_${index}_${Date.now()}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
-
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: 'KIRA Photo Booth',
-                text: 'My KIRA Purikura photo!',
-            });
-            return;
-        }
-
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     } catch (e) {
-        console.error("Save failed", e);
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = `KIRA_${index}.png`;
-        a.click();
+        console.error("Save failed, opening in new tab", e);
+        window.open(dataUrl, '_blank');
     }
   };
 
@@ -319,10 +315,7 @@ const App = () => {
       if (file) {
           const url = URL.createObjectURL(file);
           loadImage(url).then(img => {
-              setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
-                  ...dec,
-                  frameImage: img
-              } : dec));
+              setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? { ...dec, frameImage: img } : dec));
               playSound('success');
           }).catch(e => console.error("Custom frame load failed", e));
       }
@@ -434,7 +427,6 @@ const App = () => {
   if (appState === AppState.EDIT) {
       return (
           <div className="fixed inset-0 flex flex-col md:flex-row bg-[#fff0f5] overflow-hidden select-none touch-none">
-              {/* Carousel Viewport (Top/Left) */}
               <div className="flex-1 relative flex items-center justify-center p-2 md:p-12 overflow-hidden bg-slate-100/30">
                   <div className="relative w-full h-full flex items-center justify-center">
                       {uploadedImages.map((_, idx) => {
@@ -443,7 +435,6 @@ const App = () => {
                           const isPrev = offset === -1;
                           const isNext = offset === 1;
                           
-                          // Dynamic layout for stacked peeking effect
                           let tx = 0, scale = 1, opacity = 1, z = 30;
                           
                           if (isActive) {
@@ -482,7 +473,6 @@ const App = () => {
                           );
                       })}
 
-                      {/* Carousel Arrows */}
                       {uploadedImages.length > 1 && (
                           <>
                               {activeImageIndex > 0 && (
@@ -506,7 +496,6 @@ const App = () => {
                   </div>
               </div>
 
-              {/* Sidebar / Bottom Panel */}
               <div className="w-full md:w-[450px] bg-white/95 backdrop-blur-3xl flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.08)] z-[60] h-[45vh] md:h-full border-t md:border-t-0 md:border-l border-white/50">
                   <div className="flex-none p-4 md:p-6 pb-0">
                       <div className="flex justify-between bg-slate-100/80 p-1.5 rounded-[2.5rem] border border-slate-200/50">
