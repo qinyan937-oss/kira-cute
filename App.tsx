@@ -1,777 +1,636 @@
 
-import { GoogleGenAI } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, ImageTransform, StickerItem } from './types';
 import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, PEN_COLORS, STICKER_CATEGORIES } from './constants';
-import { loadImage, renderComposite, generateLayoutSheet, drawStickerAsset } from './services/processor';
+import { loadImage, renderComposite, generateLayoutSheetAsync, drawStickerAsset } from './services/processor';
 import { playSound } from './services/audio';
 import Button from './components/Button';
 
-// --- TRANSLATIONS ---
 const TRANSLATIONS = {
-  en: {
-    appTitle: "KIRA",
-    appSubtitle: "Capture Your Shine",
-    shots: "Shot",
-    shots_plural: "Shots",
-    tpl_cinema: "Life4Cuts",
-    tpl_cinema_desc: "2 Separate Strips (White/Pink)",
-    tpl_polaroid: "Polaroid",
-    tpl_polaroid_desc: "Blue Frame & 5 Stars",
-    tpl_standard: "ID Photo",
-    tpl_standard_desc: "Perfect Blue Grid",
-    tpl_driver_license: "License",
-    tpl_driver_license_desc: "Pink Driver ID",
-    choose_mode: "How to start?",
-    start_camera: "Camera",
-    upload_photos: "Album",
-    pick_images: "Pick up to {n} images",
-    cancel: "Cancel",
-    reset: "Reset",
-    tab_adjust: "Edit",
-    tab_draw: "Draw",
-    tab_sticker: "Sticker",
-    tab_frame: "Frame",
-    beauty_filter: "Beauty",
-    moe_magic: "Moe!", 
-    retro_grain: "Grain",
-    film_look: "Film Tone",
-    date_stamp: "Date",
-    frames: "Frames",
-    upload_frame: "Custom", 
-    draw_hint: "Doodle time! 🎨",
-    pen_normal: "Marker",
-    pen_neon: "Neon",
-    brush_size: "Thickness", 
-    edit_photo_hint: "Tap photo to edit",
-    undo: "Undo",
-    enter_name: "Name", 
-    enter_name_placeholder: "Your Name", 
-    enter_location: "Loc", 
-    enter_date: "Date", 
-    flip: "Flip",
-    front: "Front",
-    delete: "Del",
-    finish: "Finish",
-    ready_msg: "✨ All Done! ✨",
-    save_hint: "Long press to save",
-    save_btn: "Save 📥",
-    back: "Back",
-    loading: "Magic...",
-    mode_fit: "Fit",
-    mode_fill: "Fill",
-    collapse: "Hide",
-    expand: "Show"
-  },
-  zh: {
-    appTitle: "KIRA 闪闪",
-    appSubtitle: "记录闪耀时刻",
-    shots: "张",
-    shots_plural: "张",
-    tpl_cinema: "人生四格",
-    tpl_cinema_desc: "双份独立条纸 (白/粉)",
-    tpl_polaroid: "蓝彩拍立得",
-    tpl_polaroid_desc: "蓝色渐变与5颗星",
-    tpl_standard: "日系证件照",
-    tpl_standard_desc: "完美蓝格排版",
-    tpl_driver_license: "美国驾照",
-    tpl_driver_license_desc: "粉色个性证件",
-    choose_mode: "想怎么拍？",
-    start_camera: "拍 照",
-    upload_photos: "相 册",
-    pick_images: "选择 {n} 张图片",
-    cancel: "取消",
-    reset: "重置",
-    tab_adjust: "调节",
-    tab_draw: "涂鸦",
-    tab_sticker: "贴纸",
-    tab_frame: "相框",
-    beauty_filter: "美颜",
-    moe_magic: "萌化!", 
-    retro_grain: "颗粒感",
-    film_look: "胶片感",
-    date_stamp: "日期",
-    frames: "相框",
-    upload_frame: "上传",
-    draw_hint: "在照片上画画吧！🎨",
-    pen_normal: "马克笔",
-    pen_neon: "荧光笔",
-    brush_size: "笔触粗细", 
-    edit_photo_hint: "点击照片可调节",
-    undo: "撤销",
-    enter_name: "姓名", 
-    enter_name_placeholder: "输入名字", 
-    enter_location: "地点", 
-    enter_date: "日期", 
-    flip: "翻转",
-    front: "置顶",
-    delete: "删除",
-    finish: "完成",
-    ready_msg: "✨ 制作完成！✨",
-    save_hint: "保存到相册",
-    save_btn: "保存图片 📥",
-    back: "返回",
-    loading: "施法中...",
-    mode_fit: "留白",
-    mode_fill: "填满",
-    collapse: "收起",
-    expand: "展开"
-  }
+  en: { appTitle: "KIRA", appSubtitle: "Record Sparkle", shots: "shots", tpl_cinema: "Life4Cuts", tpl_polaroid: "Polaroid", tpl_standard: "ID Photo", tpl_driver_license: "License", start_camera: "Camera", upload_photos: "Album", tab_adjust: "Edit", tab_draw: "Draw", tab_frame: "Frame", tab_sticker: "Stickers", beauty_filter: "Beauty", moe_magic: "Moe!", finish: "Finish", ready_msg: "✨ All Ready! ✨", save_btn: "Save 📥", back: "Back", loading: "Casting...", undo: "Undo", delete: "Delete", scale: "Size", rotation: "Rotate", brush_standard: "Standard", brush_neon: "Neon", how_to_shoot: "How to shoot?", select_hint: "Select", zoom: "Zoom", date_stamp: "Date Stamp", contrast: "Contrast", custom_frame: "Custom", tab_bg: "Background" },
+  zh: { appTitle: "KIRA 闪闪", appSubtitle: "记录闪耀时刻", shots: "张", tpl_cinema: "人生四格", tpl_polaroid: "蓝彩拍立得", tpl_standard: "日系证件照", tpl_driver_license: "美国驾照", start_camera: "拍照", upload_photos: "相册", tab_adjust: "调节", tab_draw: "涂鸦", tab_frame: "相框", tab_sticker: "贴纸", beauty_filter: "美颜", moe_magic: "萌化", finish: "完成", ready_msg: "✨ 制作完成！✨", save_btn: "保存图片 📥", back: "返回", loading: "施法中...", undo: "撤销", delete: "删除", scale: "大小", rotation: "旋转", brush_standard: "普通笔", brush_neon: "荧光笔", how_to_shoot: "想怎么拍？", select_hint: "选择", zoom: "画面缩放", date_stamp: "日期水印", contrast: "对比度调整", custom_frame: "自定义", tab_bg: "背景更换" }
 };
 
-const IconContainer = ({ children, color = "bg-pink-100", active = false }: { children?: React.ReactNode, color?: string, active?: boolean }) => (
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border-2 ${active ? 'bg-white border-pink-400 -translate-y-1 shadow-[0_4px_0_#f472b6]' : `${color} border-white/50 shadow-inner opacity-70`}`}>
-        {children}
-    </div>
-);
-
 const Icons = {
-    Camera: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    Cinema: () => (
+        <div className="flex items-center gap-4 drop-shadow-[0_0_12px_rgba(244,114,182,0.5)]">
+            <div className="w-14 h-24 bg-gradient-to-b from-pink-300 to-pink-500 rounded-xl p-2 border-2 border-white/60 flex flex-col gap-2 shadow-inner">
+                <div className="flex-1 bg-white rounded-md shadow-sm" />
+                <div className="flex-1 bg-white rounded-md shadow-sm" />
+                <div className="flex-1 bg-white rounded-md shadow-sm" />
+            </div>
+            <div className="flex flex-col gap-2.5">
+                {[...Array(4)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-pink-400" />)}
+            </div>
+        </div>
     ),
-    Image: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Polaroid: () => (
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-300 to-blue-500 rounded-2xl p-3 border-2 border-white/60 relative shadow-lg drop-shadow-[0_0_12px_rgba(59,130,246,0.3)] flex items-center justify-center">
+            <div className="w-full h-full bg-white rounded-xl relative overflow-hidden shadow-inner">
+                <div className="absolute top-1.5 right-1.5 w-3 h-3 bg-pink-400 rounded-full shadow-sm" />
+            </div>
+        </div>
     ),
-    Wand: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></svg>
+    Standard: () => (
+        <div className="w-24 h-14 bg-gradient-to-b from-sky-300 to-sky-500 rounded-2xl p-2.5 border-2 border-white/60 flex items-center gap-3 shadow-lg drop-shadow-[0_0_12px_rgba(125,211,252,0.4)]">
+            <div className="h-full aspect-[3/4] bg-white rounded-lg shadow-sm" />
+            <div className="flex-1 flex flex-col gap-2">
+                <div className="w-full h-1.5 bg-white rounded-full opacity-90" />
+                <div className="w-3/4 h-1.5 bg-white rounded-full opacity-90" />
+                <div className="w-1/2 h-1.5 bg-white rounded-full opacity-90" />
+            </div>
+        </div>
     ),
-    Sparkles: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+    License: () => (
+        <div className="w-24 h-16 bg-gradient-to-br from-pink-300 to-pink-500 rounded-2xl p-3 border-2 border-white/60 flex items-center gap-3 shadow-lg relative drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]">
+            <div className="w-10 h-10 bg-white rounded-xl shadow-sm" />
+            <div className="flex-1 flex flex-col gap-2">
+                <div className="w-full h-2 bg-white rounded-full opacity-90" />
+                <div className="w-3/4 h-2 bg-white rounded-full opacity-90" />
+                <div className="w-1/2 h-2 bg-white rounded-full opacity-90" />
+            </div>
+            <div className="absolute bottom-1.5 right-1.5 text-xs text-pink-200 animate-pulse">★</div>
+        </div>
     ),
-    Adjust: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>,
-    Frame: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>,
-    Brush: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2.5 2.24 0 .46.62.92 1 .92 1.81 0 2.54-.57 3.32-.57 1.77 0 3-1.35 3-3.02"/></svg>,
-    Smile: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>,
-    ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
-    ChevronUp: () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>,
-    
-    // --- 3D Hand-Drawn Template Icons ---
-    Cinema3D: () => (
-        <svg className="w-24 h-24 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="25" y="15" width="60" height="90" rx="10" fill="#FCE7F3" />
-          <rect x="20" y="10" width="60" height="90" rx="10" fill="#F472B6" />
-          <rect x="30" y="20" width="40" height="20" rx="4" fill="white" />
-          <rect x="30" y="45" width="40" height="20" rx="4" fill="white" />
-          <rect x="30" y="70" width="40" height="20" rx="4" fill="white" />
-          <circle cx="28" cy="18" r="3" fill="#FDF2F8" />
-          <path d="M85 20L85 90" stroke="#FBCFE8" strokeWidth="4" strokeLinecap="round" strokeDasharray="1 8" />
-        </svg>
-    ),
-    Polaroid3D: () => (
-        <svg className="w-24 h-24 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="24" y="24" width="72" height="72" rx="12" fill="#E0F2FE" />
-          <rect x="20" y="20" width="72" height="72" rx="12" fill="#3B82F6" />
-          <rect x="32" y="32" width="48" height="40" rx="4" fill="white" />
-          <rect x="28" y="78" width="56" height="8" rx="4" fill="#60A5FA" />
-          <circle cx="80" cy="35" r="8" fill="#F472B6" />
-          <circle cx="78" cy="33" r="8" fill="#FBCFE8" />
-        </svg>
-    ),
-    Standard3D: () => (
-        <svg className="w-24 h-24 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="24" y="24" width="72" height="84" rx="12" fill="#DBEAFE" />
-          <rect x="20" y="20" width="72" height="84" rx="12" fill="#60A5FA" />
-          <rect x="32" y="32" width="48" height="32" rx="6" fill="white" />
-          <rect x="32" y="70" width="48" height="6" rx="3" fill="white" />
-          <rect x="32" y="82" width="30" height="6" rx="3" fill="white" />
-          <circle cx="28" cy="28" r="4" fill="#EFF6FF" />
-        </svg>
-    ),
-    License3D: () => (
-        <svg className="w-24 h-24 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="19" y="34" width="82" height="62" rx="12" fill="#FCE7F3" />
-          <rect x="15" y="30" width="82" height="62" rx="12" fill="#F472B6" />
-          <rect x="25" y="42" width="24" height="30" rx="4" fill="white" />
-          <rect x="55" y="45" width="32" height="6" rx="3" fill="white" opacity="0.8" />
-          <rect x="55" y="56" width="24" height="6" rx="3" fill="white" opacity="0.8" />
-          <path d="M85 75L87.5 80H92.5L88.5 83.5L90 88.5L85 85.5L80 88.5L81.5 83.5L77.5 80H82.5L85 75Z" fill="#FBCFE8" />
-        </svg>
-    ),
+    Adjust: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>,
+    Frame: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M17 12h-2v2h2v-2zm-4 4h-2v2h2v-2zm8-12H3v16h18V4z"/></svg>,
+    Brush: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/></svg>,
+    Sticker: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="15.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M12 18c2.28 0 4.22-1.66 5-4H7c.78 2.34 2.72 4 5 4z"/></svg>
 };
 
 const StickerPreview = ({ id }: { id: string }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext('2d'); if (!ctx) return;
-    ctx.clearRect(0, 0, 100, 100); ctx.save(); ctx.translate(50, 50);
-    drawStickerAsset(ctx, id, 35); ctx.restore();
-  }, [id]);
-  return <canvas ref={canvasRef} width={100} height={100} className="w-16 h-16 pointer-events-none" />;
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    useEffect(() => {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx) { 
+            ctx.clearRect(0,0,100,100); 
+            ctx.save(); 
+            ctx.translate(50,50); 
+            drawStickerAsset(ctx, id, 35); 
+            ctx.restore(); 
+        }
+    }, [id]);
+    return <canvas ref={canvasRef} width={100} height={100} className="w-12 h-12 md:w-16 md:h-16" />;
 };
 
 const App = () => {
   const [lang, setLang] = useState<'en' | 'zh'>('zh');
   const t = TRANSLATIONS[lang];
 
-  // State
   const [appState, setAppState] = useState<AppState>(AppState.TEMPLATE_SELECT);
   const [selectedTemplate, setSelectedTemplate] = useState<LayoutTemplate>(LAYOUT_TEMPLATES[0]);
   const [uploadedImages, setUploadedImages] = useState<HTMLImageElement[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // Editor State
   const [activeTab, setActiveTab] = useState<'adjust' | 'frame' | 'draw' | 'sticker'>('adjust');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
-  const [lightingEnabled, setLightingEnabled] = useState(true); 
-  const [isMoeMode, setIsMoeMode] = useState(false);
-  const [isImageFit, setIsImageFit] = useState(false); 
-  const [noiseLevel, setNoiseLevel] = useState(0);
-  const [filmLookStrength, setFilmLookStrength] = useState(0);
-  const [showDate, setShowDate] = useState(true);
-  const [currentBg, setCurrentBg] = useState<BackgroundPreset>(BACKGROUND_PRESETS[0]);
-  
-  // Frame State
-  const [currentFrameImage, setCurrentFrameImage] = useState<HTMLImageElement | null>(null);
-  const frameInputRef = useRef<HTMLInputElement>(null);
-  
-  // Custom Name for ID/License
-  const [customName, setCustomName] = useState("KIRA USER");
-  const [customLocation, setCustomLocation] = useState("TOKYO / NAGOYA");
-  const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0].replace(/-/g, '/'));
-
-  // Transform State
-  const [imageTransforms, setImageTransforms] = useState<ImageTransform[]>(
-      Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 }))
-  );
-  
-  // Interaction Refs
-  const interactionMode = useRef<'none' | 'draw' | 'pan' | 'sticker_drag' | 'sticker_transform'>('none');
-  const startInteractionPos = useRef<{x: number, y: number}>({ x: 0, y: 0 });
-  const startStickerState = useRef<StickerItem | null>(null);
-
-  // Decorations
-  const [decorations, setDecorations] = useState<DecorationState[]>(
-    Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] }))
-  );
-  const [currentPenColor, setCurrentPenColor] = useState(PEN_COLORS[2]);
-  const [brushSize, setBrushSize] = useState(8);
-  const [isNeonPen, setIsNeonPen] = useState(false);
+  const [stickerCategory, setStickerCategory] = useState(STICKER_CATEGORIES[0].id);
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
 
-  // Refs
-  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Camera
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [cameraCountdown, setCameraCountdown] = useState<number | null>(null);
+  const [brushType, setBrushType] = useState<'standard' | 'neon'>('neon');
+  const [lightingEnabled, setLightingEnabled] = useState(true); 
+  const [isMoeMode, setIsMoeMode] = useState(true);
+  const [dateStampEnabled, setDateStampEnabled] = useState(true);
+  const [noiseLevel, setNoiseLevel] = useState(0.08);
+  const [contrast, setContrast] = useState(1.0);
+  const [brushSize, setBrushSize] = useState(25);
+  const [currentPenColor, setCurrentPenColor] = useState(PEN_COLORS[2]);
+  const [currentBg, setCurrentBg] = useState<BackgroundPreset>(BACKGROUND_PRESETS[0]);
+  const [currentFrameImage, setCurrentFrameImage] = useState<HTMLImageElement | null>(null);
+  const [customName, setCustomName] = useState("KIRA USER");
+  const [customLocation, setCustomLocation] = useState("SHANGHAI");
 
-  // Final Result
+  const [decorations, setDecorations] = useState<DecorationState[]>(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
+  const [imageTransforms, setImageTransforms] = useState<ImageTransform[]>(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
+  
+  const interactionMode = useRef<'none' | 'draw' | 'pan' | 'sticker_drag'>('none');
+  const startPos = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
+  const startSticker = useRef<{x: number, y: number} | null>(null);
+
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const frameUploadRef = useRef<HTMLInputElement>(null);
   const [finalLayoutUrls, setFinalLayoutUrls] = useState<string[]>([]);
 
-  // --- Effects ---
-
   useEffect(() => {
-    if (appState === AppState.CAMERA && cameraStream && videoRef.current) {
-        videoRef.current.srcObject = cameraStream;
-        videoRef.current.play().catch(e => console.error("Video play failed", e));
-    }
-  }, [appState, cameraStream]);
+    const handleGlobalUp = () => { 
+        interactionMode.current = 'none'; 
+    };
+    window.addEventListener('pointerup', handleGlobalUp);
+    return () => window.removeEventListener('pointerup', handleGlobalUp);
+  }, []);
 
   useEffect(() => {
     if (appState === AppState.EDIT && uploadedImages.length > 0) {
-       const timeoutId = setTimeout(() => {
-           uploadedImages.forEach((img, idx) => {
-               const canvas = canvasRefs.current[idx];
-               if (canvas) {
-                   renderComposite({
-                       canvas,
-                       personImage: img,
-                       backgroundImage: currentBg,
-                       frameImage: currentFrameImage, 
-                       lightingEnabled,
-                       noiseLevel,
-                       filmLookStrength,
-                       showDate,
-                       decorations: decorations[idx],
-                       imageTransform: imageTransforms[idx],
-                       selectedStickerId: idx === activeImageIndex ? selectedStickerId : null,
-                       isMoeMode, 
-                       aspectRatio: selectedTemplate.aspectRatio,
-                       isImageFit
-                   });
-               }
+       uploadedImages.forEach((img, idx) => {
+           const canvas = canvasRefs.current[idx];
+           if (canvas) renderComposite({ 
+               canvas, 
+               personImage: img, 
+               backgroundImage: currentBg, 
+               frameImage: currentFrameImage, 
+               lightingEnabled, 
+               noiseLevel, 
+               contrast, 
+               decorations: decorations[idx], 
+               imageTransform: imageTransforms[idx], 
+               selectedStickerId: idx === activeImageIndex ? selectedStickerId : null,
+               isMoeMode, 
+               aspectRatio: selectedTemplate.aspectRatio,
+               dateStampEnabled,
+               dateText: ""
            });
-       }, 10);
-       return () => clearTimeout(timeoutId);
+       });
     }
-  }, [appState, uploadedImages, currentBg, currentFrameImage, lightingEnabled, isMoeMode, isImageFit, noiseLevel, filmLookStrength, showDate, decorations, imageTransforms, activeImageIndex, selectedTemplate.aspectRatio, selectedStickerId]);
+  }, [appState, uploadedImages, currentBg, currentFrameImage, lightingEnabled, noiseLevel, contrast, isMoeMode, decorations, imageTransforms, activeImageIndex, dateStampEnabled, selectedStickerId]);
 
-  // --- Handlers ---
-  const handleTemplateSelect = (tpl: LayoutTemplate) => {
-    setSelectedTemplate(tpl);
+  const handleTemplateSelect = (tpl: LayoutTemplate) => { 
+    setSelectedTemplate(tpl); 
     setUploadedImages([]);
     setDecorations(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
     setImageTransforms(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
-    setCurrentFrameImage(null);
-    setCustomName("KIRA USER");
-    setCustomLocation("TOKYO / NAGOYA");
-    setCustomDate(new Date().toISOString().split('T')[0].replace(/-/g, '/'));
-    setIsImageFit(false);
-    canvasRefs.current = []; 
-    setAppState(AppState.UPLOAD);
-    playSound('pop');
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files).slice(0, selectedTemplate.slots);
-      try {
-        const loadedImages = await Promise.all(
-          files.map(f => loadImage(URL.createObjectURL(f as Blob)))
-        );
-        let finalImages = [...loadedImages];
-        if (finalImages.length < selectedTemplate.slots && finalImages.length > 0) {
-             while(finalImages.length < selectedTemplate.slots) {
-                 finalImages.push(finalImages[finalImages.length-1]);
-             }
-        }
-        setUploadedImages(finalImages);
-        setAppState(AppState.EDIT);
-        playSound('success');
-      } catch (err) {
-        console.error("Failed to load images", err);
-      }
-    }
-  };
-
-  const handleFrameSelect = async (frame: FramePreset) => {
-      if (frame.id === 'none') {
-          setCurrentFrameImage(null);
-          playSound('cancel');
-      } else {
-          try {
-              const img = await loadImage(frame.src);
-              setCurrentFrameImage(img);
-              playSound('pop');
-          } catch (e) {
-              console.error("Failed to load frame", e);
-          }
-      }
-  };
-
-  const handleCustomFrameUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          try {
-              const img = await loadImage(URL.createObjectURL(e.target.files[0]));
-              setCurrentFrameImage(img);
-              playSound('success');
-          } catch (e) {
-              console.error("Failed to upload frame", e);
-          }
-      }
+    setAppState(AppState.UPLOAD); 
+    playSound('pop'); 
   };
 
   const startCamera = async () => {
-      try {
-          const constraints = {
-             audio: false,
-             video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
-          };
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          setCameraStream(stream);
-          setAppState(AppState.CAMERA);
-      } catch (e) {
-          console.error("Camera access failed:", e);
-          alert("无法访问相机 (Unable to access camera). Please check permissions.");
-      }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setAppState(AppState.CAMERA);
+      setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+      playSound('pop');
+    } catch (e) { alert("Camera failed"); }
   };
 
-  const takeBurstPhotos = () => {
-      const shotsNeeded = selectedTemplate.slots;
-      const newImages: HTMLImageElement[] = [];
-      const takeShot = (count: number) => {
-          if (count >= shotsNeeded) {
-              setUploadedImages(newImages);
-              if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
-              setAppState(AppState.EDIT);
-              playSound('success');
-              return;
-          }
-          let countdown = 3;
-          setCameraCountdown(countdown);
-          playSound('pop');
-          const interval = setInterval(() => {
-              countdown--;
-              setCameraCountdown(countdown);
-              if (countdown > 0) playSound('pop');
-              if (countdown === 0) {
-                  clearInterval(interval);
-                  setCameraCountdown(null);
-                  playSound('shutter');
-                  if (videoRef.current) {
-                      const canvas = document.createElement('canvas');
-                      canvas.width = videoRef.current.videoWidth;
-                      canvas.height = videoRef.current.videoHeight;
-                      const ctx = canvas.getContext('2d');
-                      if (ctx) {
-                        ctx.translate(canvas.width, 0);
-                        ctx.scale(-1, 1);
-                        ctx.drawImage(videoRef.current, 0, 0);
-                      }
-                      const img = new Image();
-                      img.src = canvas.toDataURL('image/jpeg');
-                      newImages.push(img);
-                      setTimeout(() => takeShot(count + 1), 1000);
-                  }
-              }
-          }, 1000);
-      };
-      takeShot(0);
+  const capturePhoto = () => {
+    if (videoRef.current) {
+        const c = document.createElement('canvas');
+        c.width = videoRef.current.videoWidth; c.height = videoRef.current.videoHeight;
+        const ctx = c.getContext('2d');
+        if (ctx) {
+            ctx.translate(c.width, 0); ctx.scale(-1, 1); ctx.drawImage(videoRef.current, 0, 0);
+            loadImage(c.toDataURL()).then(img => {
+                const newList = [...uploadedImages, img]; setUploadedImages(newList);
+                playSound('shutter');
+                if (newList.length >= selectedTemplate.slots) {
+                    const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks();
+                    tracks?.forEach(t => t.stop()); setAppState(AppState.EDIT);
+                }
+            });
+        }
+    }
   };
 
-  // Canvas Interactions
-  const getCanvasPoint = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
-      const canvas = canvasRefs.current[idx];
-      if (!canvas) return { x: 0, y: 0 };
-      const rect = canvas.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  const handlePointerDown = (e: React.PointerEvent, idx: number) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setActiveImageIndex(idx);
+    const canvas = canvasRefs.current[idx]!; 
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (1000 / rect.width);
+    const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+    startPos.current = { x: px, y: py, sx: e.clientX, sy: e.clientY };
+
+    const stickers = decorations[idx].stickers || [];
+    let hitSticker = null;
+    for (let i = stickers.length - 1; i >= 0; i--) {
+        const s = stickers[i];
+        if (px > s.x - 90 * s.scale && px < s.x + 90 * s.scale && py > s.y - 90 * s.scale && py < s.y + 90 * s.scale) {
+            hitSticker = s;
+            break;
+        }
+    }
+
+    if (hitSticker) {
+        setSelectedStickerId(hitSticker.id);
+        interactionMode.current = 'sticker_drag';
+        startSticker.current = { x: hitSticker.x, y: hitSticker.y };
+        if (activeTab !== 'sticker') setActiveTab('sticker');
+    } else if (activeTab === 'draw') {
+        setSelectedStickerId(null);
+        interactionMode.current = 'draw';
+        setDecorations(prev => prev.map((dec, i) => i === idx ? {
+            ...dec,
+            strokes: [...dec.strokes, { color: currentPenColor, width: brushSize, type: brushType, points: [{ x: px, y: py }] }]
+        } : dec));
+    } else {
+        setSelectedStickerId(null);
+        interactionMode.current = 'pan'; 
+    }
   };
 
-  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
-      setActiveImageIndex(idx);
-      const pt = getCanvasPoint(e, idx);
-      interactionMode.current = 'none';
-      startInteractionPos.current = pt;
+  const handlePointerMove = (e: React.PointerEvent, idx: number) => {
+    if (interactionMode.current === 'none') return;
+    const canvas = canvasRefs.current[idx]!; 
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (1000 / rect.width);
+    const py = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-      if (activeTab === 'draw') {
-          interactionMode.current = 'draw';
-          const newStroke: Stroke = { color: currentPenColor, width: brushSize, isNeon: isNeonPen, points: [pt] };
-          const newDecs = [...decorations];
-          newDecs[idx].strokes.push(newStroke);
-          setDecorations(newDecs);
-      } else if (activeTab === 'sticker') {
-          const stickers = decorations[idx].stickers;
-          let hitId = null; let hitTransform = false;
-          for (let i = stickers.length - 1; i >= 0; i--) {
-              const s = stickers[i];
-              // Check handle first
-              if (s.id === selectedStickerId) {
-                  const hx = s.x + (100 * s.scale) * Math.cos(s.rotation) - (100 * s.scale) * Math.sin(s.rotation);
-                  const hy = s.y + (100 * s.scale) * Math.sin(s.rotation) + (100 * s.scale) * Math.cos(s.rotation);
-                  if (Math.sqrt((pt.x - hx)**2 + (pt.y - hy)**2) < 40) { hitTransform = true; hitId = s.id; break; }
-              }
-              // Check body
-              if (Math.sqrt((pt.x - s.x)**2 + (pt.y - s.y)**2) < 80 * s.scale) { hitId = s.id; break; }
-          }
-          if (hitId) {
-              setSelectedStickerId(hitId);
-              const s = stickers.find(x => x.id === hitId)!;
-              startStickerState.current = { ...s };
-              interactionMode.current = hitTransform ? 'sticker_transform' : 'sticker_drag';
-              playSound('pop');
-          } else {
-              setSelectedStickerId(null);
-          }
-      } else if (activeTab === 'adjust') {
-          interactionMode.current = 'pan';
-          const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-          const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-          startInteractionPos.current = { x: clientX, y: clientY };
-      }
+    if (interactionMode.current === 'draw') {
+        setDecorations(prev => prev.map((dec, i) => i === idx ? {
+            ...dec,
+            strokes: dec.strokes.map((stroke, si) => si === dec.strokes.length - 1 ? {
+                ...stroke,
+                points: [...stroke.points, { x: px, y: py }]
+            } : stroke)
+        } : dec));
+    } else if (interactionMode.current === 'sticker_drag' && selectedStickerId) {
+        setDecorations(prev => prev.map((dec, i) => i === idx ? {
+            ...dec,
+            stickers: (dec.stickers || []).map(s => s.id === selectedStickerId ? {
+                ...s,
+                x: startSticker.current!.x + (px - startPos.current.x),
+                y: startSticker.current!.y + (py - startPos.current.y)
+            } : s)
+        } : dec));
+    } else if (interactionMode.current === 'pan') {
+        const dx = (e.clientX - startPos.current.sx) * 1.5;
+        const dy = (e.clientY - startPos.current.sy) * 1.5;
+        setImageTransforms(prev => prev.map((tr, i) => i === idx ? { ...tr, x: tr.x + dx, y: tr.y + dy } : tr));
+        startPos.current.sx = e.clientX; startPos.current.sy = e.clientY;
+    }
   };
 
-  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent, idx: number) => {
-      if (interactionMode.current === 'none') return;
-      if (e.cancelable) e.preventDefault();
-      const pt = getCanvasPoint(e, idx);
-
-      if (interactionMode.current === 'draw') {
-           const newDecs = [...decorations];
-           const strokes = newDecs[idx].strokes;
-           if (strokes.length > 0) {
-               strokes[strokes.length - 1].points.push(pt);
-               setDecorations(newDecs);
-           }
-      } else if (interactionMode.current === 'sticker_drag' && selectedStickerId) {
-          const newDecs = [...decorations];
-          const s = newDecs[idx].stickers.find(x => x.id === selectedStickerId);
-          if (s && startStickerState.current) {
-              s.x = startStickerState.current.x + (pt.x - startInteractionPos.current.x);
-              s.y = startStickerState.current.y + (pt.y - startInteractionPos.current.y);
-              setDecorations(newDecs);
-          }
-      } else if (interactionMode.current === 'sticker_transform' && selectedStickerId) {
-          const newDecs = [...decorations];
-          const s = newDecs[idx].stickers.find(x => x.id === selectedStickerId);
-          if (s && startStickerState.current) {
-              const dx = pt.x - s.x, dy = pt.y - s.y;
-              const dist = Math.sqrt(dx*dx + dy*dy);
-              s.scale = Math.max(0.2, (dist / 141) * startStickerState.current.scale);
-              s.rotation = Math.atan2(dy, dx) - 0.785;
-              setDecorations(newDecs);
-          }
-      } else if (interactionMode.current === 'pan') {
-          const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-          const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-          const screenDx = clientX - startInteractionPos.current.x;
-          const screenDy = clientY - startInteractionPos.current.y;
-          const canvas = canvasRefs.current[idx];
-          const rect = canvas?.getBoundingClientRect();
-          let scaleX = 2; 
-          if (canvas && rect && rect.width > 0) scaleX = canvas.width / rect.width;
-          const dx = screenDx * scaleX;
-          const dy = screenDy * scaleX;
-          const newTransforms = [...imageTransforms];
-          newTransforms[idx] = { ...newTransforms[idx], x: newTransforms[idx].x + dx, y: newTransforms[idx].y + dy };
-          setImageTransforms(newTransforms);
-          startInteractionPos.current = { x: clientX, y: clientY };
-      }
-  };
-
-  const handlePointerUp = () => {
-      interactionMode.current = 'none';
-      startStickerState.current = null;
-  };
-
-  const addSticker = (contentId: string) => {
-      const newDecs = [...decorations];
-      const id = Date.now().toString();
-      newDecs[activeImageIndex].stickers.push({ id, content: contentId, x: 500, y: 700, scale: 1, rotation: 0 });
-      setDecorations(newDecs); setSelectedStickerId(id); playSound('pop');
+  const addSticker = (type: string) => {
+    const newSticker: StickerItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        type,
+        x: 500,
+        y: 666,
+        scale: 1,
+        rotation: 0
+    };
+    setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
+        ...dec,
+        stickers: [...(dec.stickers || []), newSticker]
+    } : dec));
+    setSelectedStickerId(newSticker.id);
+    playSound('pop');
   };
 
   const generateFinal = async () => {
-      setAppState(AppState.PROCESSING);
       setSelectedStickerId(null);
-      // Wait for React to clear handles, then perform a manual clean render pass on all canvases
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      uploadedImages.forEach((img, idx) => {
-          const canvas = canvasRefs.current[idx];
-          if (canvas) {
-              renderComposite({
-                  canvas,
-                  personImage: img,
-                  backgroundImage: currentBg,
-                  frameImage: currentFrameImage, 
-                  lightingEnabled,
-                  noiseLevel,
-                  filmLookStrength,
-                  showDate,
-                  decorations: decorations[idx],
-                  imageTransform: imageTransforms[idx],
-                  selectedStickerId: null, // Force no selection handles
-                  isMoeMode, 
-                  aspectRatio: selectedTemplate.aspectRatio,
-                  isImageFit
-              });
-          }
-      });
-      
-      try {
-          const validCanvases = canvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null && c instanceof HTMLCanvasElement && c.width > 0 && c.height > 0);
-          const urls = generateLayoutSheet(validCanvases, selectedTemplate.id, customLocation, customName, customDate);
-          setFinalLayoutUrls(urls);
-          setAppState(AppState.LAYOUT);
-          playSound('success');
-      } catch (e) {
-          console.error("Generation Error:", e);
-          setAppState(AppState.EDIT);
+      await new Promise(r => setTimeout(r, 60)); 
+      const dataUrls = canvasRefs.current.filter(c => !!c).map(c => c!.toDataURL('image/png'));
+      setAppState(AppState.PROCESSING);
+      await new Promise(r => setTimeout(r, 1000));
+      const urls = await generateLayoutSheetAsync(dataUrls, selectedTemplate.id, customLocation, customName, new Date().toLocaleDateString());
+      setFinalLayoutUrls(urls);
+      setAppState(AppState.LAYOUT); playSound('success');
+  };
+
+  const handleFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const url = URL.createObjectURL(file);
+          loadImage(url).then(img => {
+              setCurrentFrameImage(img);
+              playSound('success');
+          });
       }
   };
-  
-  const handleDownload = (url: string, index: number) => {
-      const a = document.createElement('a');
-      a.href = url; a.download = `KIRA_${Date.now()}_${index+1}.png`; a.click();
-      playSound('success');
-  };
 
-  const handleGoBack = (toState: AppState) => { setAppState(toState); playSound('cancel'); };
-
-  const renderTemplateSelect = () => (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none">
-          <div className="absolute top-10 left-10 text-6xl opacity-30 animate-float pointer-events-none">☁️</div>
-          <div className="absolute bottom-20 right-10 text-6xl opacity-30 animate-bounce-soft pointer-events-none">🎀</div>
-          <div className="z-10 text-center mb-10">
-              <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
-              <p className="text-3xl md:text-5xl font-black text-jelly animate-bounce-soft mt-2">
-                  {t.appSubtitle}
-              </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 z-10 w-full max-w-5xl">
-              {LAYOUT_TEMPLATES.map(tpl => (
-                  <button key={tpl.id} onClick={() => handleTemplateSelect(tpl)} className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-6 shadow-2xl hover:-translate-y-4 transition-all duration-300 border-[6px] border-white hover:border-pink-300 flex flex-col items-center group relative overflow-hidden">
-                      <div className="mb-6 transform group-hover:rotate-6 transition-transform duration-300 drop-shadow-[0_10px_10px_rgba(236,72,153,0.3)]">
-                          {(tpl.id === 'cinema' && <Icons.Cinema3D />) || (tpl.id === 'polaroid' && <Icons.Polaroid3D />) || (tpl.id === 'standard' && <Icons.Standard3D />) || <Icons.License3D />}
-                      </div>
-                      <h3 className="font-black text-slate-700 text-xl group-hover:text-pink-500 transition-colors">{t[`tpl_${tpl.id}` as keyof typeof t]}</h3>
-                      <p className="text-xs text-slate-400 mt-1 font-bold">{t[`tpl_${tpl.id}_desc` as keyof typeof t]}</p>
-                      <span className="mt-4 bg-pink-100 text-pink-500 text-xs font-black px-4 py-1.5 rounded-full shadow-inner">{tpl.slots} {tpl.slots > 1 ? t.shots_plural : t.shots}</span>
-                  </button>
-              ))}
-          </div>
-          <div className="mt-16 flex justify-center space-x-4 z-10">
-              <Button size="sm" variant={lang==='en'?'primary':'ghost'} onClick={() => setLang('en')}>English</Button>
-              <Button size="sm" variant={lang==='zh'?'primary':'ghost'} onClick={() => setLang('zh')}>中文</Button>
-          </div>
-      </div>
-  );
-
-  const renderUpload = () => (
-      <div className="min-h-screen flex items-center justify-center p-4 relative">
-          <div className="max-w-md w-full bg-white/90 backdrop-blur-xl p-8 rounded-[3rem] shadow-2xl border-[8px] border-white relative">
-              <div className="absolute -top-6 -left-6 text-6xl animate-bounce drop-shadow-md">📸</div>
-              <h2 className="text-3xl font-black text-slate-700 mb-8 text-center text-3d-blue">{t.choose_mode}</h2>
-              <div className="space-y-6">
-                  <Button onClick={startCamera} fullWidth size="lg" className="h-24 text-xl flex flex-col gap-1 items-center justify-center"><Icons.Camera /><span>{t.start_camera}</span></Button>
-                  <div className="bg-blue-50/50 p-6 rounded-3xl border-4 border-dashed border-blue-200 hover:bg-blue-50 transition-colors text-center cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md group-hover:scale-110 transition-transform"><Icons.Image /></div>
-                      <p className="text-slate-600 font-bold text-lg">{t.upload_photos}</p>
-                      <p className="text-xs text-slate-400 mt-1">{t.pick_images.replace('{n}', selectedTemplate.slots.toString())}</p>
-                      <input type="file" multiple accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                  </div>
-                  <div className="pt-6 border-t border-slate-100"><Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.TEMPLATE_SELECT)}>← {t.back}</Button></div>
+  if (appState === AppState.TEMPLATE_SELECT) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center py-10 px-4 md:px-12 relative overflow-hidden">
+        <div className="z-10 text-center mb-10 md:mb-14">
+            <h1 className="text-6xl md:text-8xl font-black mb-3 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
+            <p className="text-3xl md:text-5xl font-black text-jelly animate-float">{t.appSubtitle}</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 z-10 w-full max-w-7xl px-4">
+          {LAYOUT_TEMPLATES.map(tpl => (
+            <button 
+                key={tpl.id} 
+                onClick={() => handleTemplateSelect(tpl)} 
+                className="bg-white rounded-[3rem] p-8 md:p-10 shadow-2xl hover:-translate-y-3 transition-all duration-500 flex flex-col items-center group relative overflow-hidden active:scale-95 text-center border-4 border-white/50"
+            >
+              <div className="mb-8 md:mb-10 transform group-hover:scale-110 transition-transform h-32 md:h-36 flex items-center justify-center w-full">
+                {tpl.id === 'cinema' ? <Icons.Cinema /> : tpl.id === 'polaroid' ? <Icons.Polaroid /> : tpl.id === 'standard' ? <Icons.Standard /> : <Icons.License />}
               </div>
-          </div>
+              <h3 className="font-black text-slate-800 text-2xl md:text-3xl mb-2">{t[`tpl_${tpl.id}` as keyof typeof t]}</h3>
+              <p className="text-sm md:text-base text-slate-400 font-medium mb-8 leading-relaxed px-4">{tpl.description}</p>
+              <div className="mt-auto bg-pink-100/50 shadow-inner px-6 py-2 rounded-full text-pink-500 font-black text-sm uppercase tracking-widest border border-white">
+                {tpl.slots} {t.shots}
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="mt-12 md:mt-20 flex gap-4 z-10 font-black text-lg md:text-xl">
+            <button onClick={() => setLang('en')} className={`px-4 py-2 transition-all ${lang==='en'?'text-pink-500':'text-slate-400 opacity-60'}`}>English</button>
+            <button onClick={() => setLang('zh')} className={`px-6 py-2 rounded-xl transition-all ${lang==='zh'?'bg-pink-400 text-white shadow-lg':'text-slate-400 opacity-60'}`}>中文</button>
+        </div>
       </div>
-  );
-  
-  const renderCamera = () => (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
-             {cameraCountdown !== null && <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-10"><span className="text-white text-[10rem] font-black animate-ping drop-shadow-2xl">{cameraCountdown}</span></div>}
-          </div>
-          <div className="h-48 bg-white/10 backdrop-blur-md flex justify-between items-center rounded-t-[3rem] border-t border-white/20 pb-8 px-10">
-              <Button variant="secondary" onClick={() => { if (cameraStream) cameraStream.getTracks().forEach(t => t.stop()); handleGoBack(AppState.UPLOAD); }}>← {t.cancel}</Button>
-              <button onClick={takeBurstPhotos} disabled={cameraCountdown !== null} className="w-24 h-24 bg-gradient-to-b from-pink-400 to-pink-600 rounded-full border-4 border-white shadow-[0_0_0_8px_rgba(255,255,255,0.3)] flex items-center justify-center active:scale-95 transition-transform"><div className="w-20 h-20 border-2 border-white/50 rounded-full"></div></button>
-              <div className="w-24 md:w-32 invisible"></div>
-          </div>
-      </div>
-  );
+    );
+  }
 
-  const renderEditor = () => (
-      <div className="fixed inset-0 w-full flex flex-col md:flex-row overflow-hidden bg-[#fff0f5]">
-          <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden">
-              <div className="relative w-full h-full max-w-2xl max-h-full flex items-center justify-center">
-                  <div className="grid gap-4 w-full h-full justify-center content-center" style={{ gridTemplateColumns: selectedTemplate.slots > 1 ? '1fr 1fr' : '1fr' }}>
-                      {uploadedImages.map((img, idx) => (
-                          <div key={idx} className={`relative rounded-lg overflow-hidden shadow-2xl border-[6px] transition-all duration-300 ${activeImageIndex === idx ? 'border-pink-400 scale-[1.02] rotate-1 z-10 shadow-pink-200' : 'border-white opacity-80'}`} style={{ aspectRatio: selectedTemplate.aspectRatio }}>
-                              <canvas ref={el => { if (el) canvasRefs.current[idx] = el; }} className="w-full h-full object-contain bg-white cursor-crosshair touch-none" onMouseDown={(e) => handlePointerDown(e, idx)} onTouchStart={(e) => handlePointerDown(e, idx)} onMouseMove={(e) => handlePointerMove(e, idx)} onTouchMove={(e) => handlePointerMove(e, idx)} onMouseUp={handlePointerUp} onTouchEnd={handlePointerUp} onMouseLeave={handlePointerUp} />
-                              <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-bold pointer-events-none backdrop-blur-sm">#{idx + 1}</div>
+  if (appState === AppState.UPLOAD) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-8">
+          <div className="z-10 text-center mb-8">
+            <h2 className="text-4xl md:text-6xl text-jelly animate-float">{t.how_to_shoot}</h2>
+          </div>
+          <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl w-full max-w-md flex flex-col items-center gap-8 relative">
+              <button 
+                onClick={startCamera} 
+                className="w-full h-24 bg-pink-500 hover:bg-pink-400 border-b-8 border-pink-700 active:border-b-0 active:translate-y-1 transition-all rounded-[2rem] flex flex-col items-center justify-center text-white shadow-xl group"
+              >
+                <svg className="w-8 h-8 mb-1 group-active:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span className="font-black text-2xl uppercase tracking-widest">{t.start_camera}</span>
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full p-10 rounded-[2.5rem] border-[4px] border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center group"
+              >
+                  <div className="w-20 h-20 bg-blue-400/10 rounded-full flex items-center justify-center mb-4 shadow-inner border-2 border-white">
+                    <svg className="w-10 h-10 text-blue-500 group-hover:scale-125 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <span className="font-black text-3xl text-slate-700 uppercase tracking-widest">{t.upload_photos}</span>
+                  <span className="text-slate-400 font-bold mt-2">{t.select_hint} {selectedTemplate.slots} {t.shots}</span>
+              </button>
+              <button 
+                onClick={() => setAppState(AppState.TEMPLATE_SELECT)} 
+                className="w-full h-16 bg-sky-400 hover:bg-sky-300 border-b-6 border-sky-600 active:border-b-0 active:translate-y-1 transition-all rounded-2xl flex items-center justify-center text-white text-xl font-black uppercase tracking-widest mt-4"
+              >
+                ← {t.back}
+              </button>
+          </div>
+          <input type="file" multiple ref={fileInputRef} className="hidden" onChange={(e) => {
+              if (e.target.files) {
+                  const files = Array.from(e.target.files).slice(0, selectedTemplate.slots);
+                  Promise.all(files.map((f: File) => loadImage(URL.createObjectURL(f)))).then(imgs => {
+                      setUploadedImages(imgs); setAppState(AppState.EDIT); playSound('success');
+                  });
+              }
+          }} />
+      </div>
+    );
+  }
+
+  if (appState === AppState.CAMERA) {
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
+          <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
+          <div className="absolute top-10 text-white font-black text-5xl drop-shadow-2xl">{uploadedImages.length} / {selectedTemplate.slots}</div>
+          <div className="absolute bottom-16 flex flex-col items-center gap-12">
+              <button onClick={capturePhoto} className="w-32 h-32 rounded-full border-[12px] border-white/50 bg-white shadow-2xl active:scale-90 transition-transform flex items-center justify-center group">
+                  <div className="w-16 h-16 rounded-full bg-pink-400 animate-pulse group-active:scale-150 transition-transform"></div>
+              </button>
+              <Button variant="ghost" onClick={() => {
+                   const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks();
+                   tracks?.forEach(t => t.stop()); setAppState(AppState.UPLOAD);
+              }} className="text-white text-3xl font-black uppercase">{t.back}</Button>
+          </div>
+      </div>
+    );
+  }
+
+  if (appState === AppState.EDIT) {
+      return (
+          <div className="fixed inset-0 flex flex-col md:flex-row bg-[#fff0f5] overflow-hidden select-none touch-none">
+              <div className="flex-1 relative flex items-center justify-center p-4 md:p-8 overflow-hidden bg-slate-100/30">
+                  <div className={`grid gap-4 md:gap-8 w-full h-full max-h-[85vh] flex items-center justify-center ${selectedTemplate.slots === 1 ? 'max-w-4xl px-4 md:px-20' : 'max-w-5xl'}`} style={{ gridTemplateColumns: selectedTemplate.slots > 1 ? '1fr 1fr' : '1fr' }}>
+                      {uploadedImages.map((_, idx) => (
+                          <div key={idx} className={`relative rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl border-[6px] md:border-[8px] transition-all flex items-center justify-center bg-white ${activeImageIndex === idx ? 'border-pink-400 scale-[1.02] z-10' : 'border-white opacity-90'}`} style={{ aspectRatio: selectedTemplate.aspectRatio }}>
+                              <canvas 
+                                ref={el => { canvasRefs.current[idx] = el; }} 
+                                className="w-full h-full object-contain touch-none bg-white cursor-crosshair" 
+                                onPointerDown={e => handlePointerDown(e, idx)} 
+                                onPointerMove={e => handlePointerMove(e, idx)}
+                              />
                           </div>
                       ))}
                   </div>
               </div>
-          </div>
 
-          <div className={`flex-none z-20 w-full md:w-[420px] bg-white/90 backdrop-blur-2xl shadow-2xl flex flex-col rounded-t-[2.5rem] md:rounded-l-[2.5rem] md:rounded-tr-none border-t border-l border-white/60 transition-all duration-300 ${isSidebarOpen ? 'max-h-[55vh] md:h-full' : 'max-h-[140px] md:h-full'}`}>
-              <div className="relative flex justify-around p-4 pb-2">
-                  {[{ id: 'adjust', icon: <Icons.Adjust />, label: t.tab_adjust, color: 'bg-blue-100' }, { id: 'frame', icon: <Icons.Frame />, label: t.tab_frame, color: 'bg-purple-100' }, { id: 'draw', icon: <Icons.Brush />, label: t.tab_draw, color: 'bg-yellow-100' }, { id: 'sticker', icon: <Icons.Smile />, label: t.tab_sticker, color: 'bg-green-100' }].map(tab => (
-                      <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setIsSidebarOpen(true); }} className="flex flex-col items-center gap-1 group">
-                          <IconContainer color={tab.color} active={activeTab === tab.id}>{tab.icon}</IconContainer>
-                          <span className={`text-[10px] font-bold ${activeTab === tab.id ? 'text-pink-500' : 'text-slate-400'}`}>{tab.label}</span>
-                      </button>
-                  ))}
-                  <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-400 md:hidden">{isSidebarOpen ? <Icons.ChevronDown /> : <Icons.ChevronUp />}</button>
-              </div>
-              <div className="w-full h-px bg-slate-100 mb-2"></div>
-
-              {isSidebarOpen && (
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  {activeTab === 'adjust' && (
-                      <div className="animate-fade-in space-y-5">
-                        <div className="grid grid-cols-2 gap-3"><Button variant={lightingEnabled ? 'primary' : 'outline'} onClick={() => setLightingEnabled(!lightingEnabled)} size="sm"><Icons.Wand /><span className="ml-2">{t.beauty_filter}</span></Button><Button variant={isMoeMode ? 'secondary' : 'outline'} onClick={() => setIsMoeMode(!isMoeMode)} size="sm"><Icons.Sparkles /><span className="ml-2">{t.moe_magic}</span></Button></div>
-                        
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-slate-500">Photo Scale</label></div>
-                             <input type="range" min="0.5" max="2" step="0.1" value={imageTransforms[activeImageIndex].scale} onChange={(e) => { const newT = [...imageTransforms]; newT[activeImageIndex].scale = parseFloat(e.target.value); setImageTransforms(newT); }} />
-                        </div>
-
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <div className="flex justify-between items-center mb-2">
-                                 <label className="text-xs font-bold text-slate-500">{t.retro_grain}</label>
-                                 <span className="text-[10px] font-bold text-slate-400">{(noiseLevel * 100).toFixed(0)}%</span>
-                             </div>
-                             <input type="range" min="0" max="1" step="0.1" value={noiseLevel} onChange={(e) => setNoiseLevel(parseFloat(e.target.value))} />
-                        </div>
-
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <div className="flex justify-between items-center mb-2">
-                                 <label className="text-xs font-bold text-slate-500">{t.film_look}</label>
-                                 <span className="text-[10px] font-bold text-slate-400">{(filmLookStrength * 100).toFixed(0)}%</span>
-                             </div>
-                             <input type="range" min="0" max="1" step="0.1" value={filmLookStrength} onChange={(e) => setFilmLookStrength(parseFloat(e.target.value))} />
-                        </div>
-
-                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                             <label className="text-sm font-bold text-slate-600">{t.date_stamp}</label>
-                             <input type="checkbox" checked={showDate} onChange={(e) => setShowDate(e.target.checked)} className="w-6 h-6 accent-pink-500" />
-                        </div>
-                        
-                        <div className="space-y-3 pt-4"><label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Background</label><div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-1">{BACKGROUND_PRESETS.map(bg => <button key={bg.id} onClick={() => setCurrentBg(bg)} className={`w-10 h-10 rounded-full border-4 flex-shrink-0 shadow-md ${currentBg.id === bg.id ? 'border-pink-500 scale-110' : 'border-white'}`} style={{ background: bg.value }} />)}</div></div>
+              <div className="w-full md:w-[450px] bg-white/95 backdrop-blur-3xl flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.08)] z-30 h-[45vh] md:h-full border-t md:border-t-0 md:border-l border-white/50">
+                  <div className="flex-none p-4 md:p-6 pb-0">
+                      <div className="flex justify-between bg-slate-100/80 p-1.5 rounded-[2.5rem] border border-slate-200/50">
+                          {[
+                            {id:'adjust',icon:<Icons.Adjust/>, label: t.tab_adjust},
+                            {id:'frame',icon:<Icons.Frame/>, label: t.tab_frame},
+                            {id:'draw',icon:<Icons.Brush/>, label: t.tab_draw},
+                            {id:'sticker',icon:<Icons.Sticker/>, label: t.tab_sticker}
+                          ].map(tab => (
+                              <button 
+                                key={tab.id} 
+                                onClick={() => { setActiveTab(tab.id as any); playSound('pop'); }} 
+                                className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-[2rem] transition-all ${activeTab === tab.id ? 'bg-white text-pink-500 shadow-lg scale-105' : 'text-slate-400 hover:text-pink-300'}`}
+                              >
+                                <div className="mb-0.5">{tab.icon}</div>
+                                <span className="text-[10px] font-black uppercase">{tab.label}</span>
+                              </button>
+                          ))}
                       </div>
-                  )}
-                  {activeTab === 'frame' && (
-                      <div className="space-y-4 animate-fade-in">
-                          <Button variant="secondary" fullWidth onClick={() => frameInputRef.current?.click()}>{t.upload_frame}</Button>
-                          <input type="file" accept="image/png" className="hidden" ref={frameInputRef} onChange={handleCustomFrameUpload}/>
-                          <div className="grid grid-cols-3 gap-3">{FRAME_PRESETS.map(frame => <button key={frame.id} onClick={() => handleFrameSelect(frame)} className={`aspect-[3/4] rounded-xl border-4 overflow-hidden relative bg-slate-50 ${currentFrameImage && frame.id !== 'none' ? 'border-pink-400' : 'border-slate-100'}`}>{frame.id === 'none' ? <div className="w-full h-full flex items-center justify-center text-slate-300 font-bold text-xs">NONE</div> : <img src={frame.src} className="w-full h-full object-contain" />}</button>)}</div>
-                      </div>
-                  )}
-                  {activeTab === 'draw' && (
-                      <div className="animate-fade-in space-y-6">
-                        <div className="flex justify-center gap-3"><Button size="sm" variant={!isNeonPen ? 'secondary' : 'outline'} onClick={() => setIsNeonPen(false)}>{t.pen_normal}</Button><Button size="sm" variant={isNeonPen ? 'primary' : 'outline'} onClick={() => setIsNeonPen(true)}>{t.pen_neon}</Button></div>
-                        <div className="flex items-center gap-3"><label className="text-xs font-bold text-slate-500">Size</label><input type="range" min="4" max="80" step="2" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value))} className="flex-1" /></div>
-                        <div className="flex flex-wrap gap-3 justify-center">{PEN_COLORS.map(c => <button key={c} onClick={() => setCurrentPenColor(c)} className={`w-9 h-9 rounded-full border-4 ${currentPenColor === c ? 'scale-110 border-slate-600' : 'border-white'}`} style={{ backgroundColor: c }} />)}</div>
-                        <Button variant="ghost" fullWidth onClick={() => { const newDecs = [...decorations]; newDecs[activeImageIndex].strokes.pop(); setDecorations(newDecs); }}>{t.undo}</Button>
-                      </div>
-                  )}
-                  {activeTab === 'sticker' && (
-                      <div className="animate-fade-in space-y-6">
-                        {selectedStickerId && (
-                            <div className="bg-pink-50 p-4 rounded-2xl flex gap-3"><Button variant="outline" size="sm" fullWidth onClick={() => { const newDecs = [...decorations]; const s = newDecs[activeImageIndex].stickers.find(x => x.id === selectedStickerId); if(s) s.isFlipped = !s.isFlipped; setDecorations(newDecs); }}>{t.flip}</Button><Button variant="outline" size="sm" fullWidth onClick={() => { const newDecs = [...decorations]; const list = newDecs[activeImageIndex].stickers; const i = list.findIndex(x => x.id === selectedStickerId); if(i >= 0) list.push(list.splice(i, 1)[0]); setDecorations(newDecs); }}>{t.front}</Button><Button variant="danger" size="sm" fullWidth onClick={() => { const newDecs = [...decorations]; newDecs[activeImageIndex].stickers = newDecs[activeImageIndex].stickers.filter(s => s.id !== selectedStickerId); setDecorations(newDecs); setSelectedStickerId(null); }}>{t.delete}</Button></div>
-                        )}
-                        {Object.entries(STICKER_CATEGORIES).map(([cat, items]) => (
-                            <div key={cat} className="space-y-3">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{cat}</h4>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {items.map(item => <button key={item.id} onClick={() => addSticker(item.id)} className="bg-white rounded-xl hover:bg-pink-50 border-2 border-transparent hover:border-pink-200 flex items-center justify-center p-1 shadow-sm"><StickerPreview id={item.id}/></button>)}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
+                      {activeTab === 'adjust' && (
+                          <div className="space-y-6 animate-fade-in">
+                              <div className="grid grid-cols-2 gap-4">
+                                  <Button variant={lightingEnabled ? 'primary':'outline'} onClick={()=>setLightingEnabled(!lightingEnabled)} className="h-12 rounded-2xl text-base">{t.beauty_filter}</Button>
+                                  <Button variant={isMoeMode ? 'secondary':'outline'} onClick={()=>setIsMoeMode(!isMoeMode)} className="h-12 rounded-2xl text-base">{t.moe_magic}</Button>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                  <span className="font-black text-slate-500 text-xs uppercase tracking-widest">{t.tab_bg}</span>
+                                  <div className="grid grid-cols-5 gap-2">
+                                      {BACKGROUND_PRESETS.map(bg => (
+                                          <button 
+                                              key={bg.id} 
+                                              onClick={() => { setCurrentBg(bg); playSound('pop'); }}
+                                              className={`aspect-square rounded-full border-2 transition-all ${currentBg.id === bg.id ? 'border-pink-400 scale-110 shadow-md' : 'border-white'}`}
+                                              style={{ background: bg.value, backgroundSize: 'cover' }}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+
+                              <div className="space-y-4">
+                                  <div className="flex justify-between font-black text-slate-500 text-sm"><span>胶片颗粒</span><span>{Math.round(noiseLevel*100)}%</span></div>
+                                  <input type="range" min="0" max="0.5" step="0.01" value={noiseLevel} onChange={e=>setNoiseLevel(parseFloat(e.target.value))} />
+                                  <div className="flex justify-between font-black text-slate-500 text-sm"><span>{t.contrast}</span><span>{Math.round(contrast * 100)}%</span></div>
+                                  <input type="range" min="0.5" max="2.0" step="0.05" value={contrast} onChange={e=>setContrast(parseFloat(e.target.value))} />
+                                  <div className="flex justify-between font-black text-slate-500 text-sm"><span>{t.zoom}</span><span>{Math.round(imageTransforms[activeImageIndex].scale * 100)}%</span></div>
+                                  <input type="range" min="0.5" max="3" step="0.05" value={imageTransforms[activeImageIndex].scale} onChange={e => {
+                                      const trs = [...imageTransforms];
+                                      trs[activeImageIndex] = { ...trs[activeImageIndex], scale: parseFloat(e.target.value) };
+                                      setImageTransforms(trs);
+                                  }} />
+                              </div>
+                              <div className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                                  <span className="font-black text-slate-600 text-sm uppercase">{t.date_stamp}</span>
+                                  <button onClick={() => setDateStampEnabled(!dateStampEnabled)} className={`w-14 h-8 rounded-full transition-colors relative ${dateStampEnabled ? 'bg-pink-400' : 'bg-slate-200'}`}>
+                                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${dateStampEnabled ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                                  </button>
+                              </div>
+                          </div>
+                      )}
+                      {activeTab === 'frame' && (
+                          <div className="grid grid-cols-2 gap-4 animate-fade-in pb-10">
+                              {FRAME_PRESETS.map(f => (
+                                <button key={f.id} onClick={async ()=> { const img = f.src ? await loadImage(f.src) : null; setCurrentFrameImage(img); playSound('pop'); }} className={`aspect-[3/4] bg-white rounded-2xl overflow-hidden border-4 transition-all hover:scale-105 ${currentFrameImage?.src === f.src ? 'border-pink-400 shadow-xl' : 'border-slate-100'}`}>
+                                    {f.src ? <img src={f.src} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-black text-slate-300">NONE</div>}
+                                </button>
+                              ))}
+                              <button 
+                                onClick={() => frameUploadRef.current?.click()}
+                                className="aspect-[3/4] bg-pink-50 rounded-2xl border-4 border-dashed border-pink-200 flex flex-col items-center justify-center text-pink-300 hover:text-pink-400 hover:border-pink-300 transition-all"
+                              >
+                                  <svg className="w-8 h-8 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                  <span className="font-black text-xs uppercase">{t.custom_frame}</span>
+                              </button>
+                              <input type="file" ref={frameUploadRef} className="hidden" accept="image/*" onChange={handleFrameUpload} />
+                          </div>
+                      )}
+                      {activeTab === 'draw' && (
+                          <div className="space-y-8 animate-fade-in pb-10">
+                              <div className="flex gap-3 p-1.5 bg-slate-100 rounded-[2rem]">
+                                  <button onClick={()=>setBrushType('standard')} className={`flex-1 py-3 rounded-2xl font-black text-base transition-all ${brushType==='standard'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_standard}</button>
+                                  <button onClick={()=>setBrushType('neon')} className={`flex-1 py-3 rounded-2xl font-black text-base transition-all ${brushType==='neon'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_neon}</button>
+                              </div>
+                              <div className="grid grid-cols-4 gap-4 justify-items-center">
+                                  {PEN_COLORS.map(c => <button key={c} onClick={()=>setCurrentPenColor(c)} className={`w-10 h-10 rounded-full border-4 transition-transform ${currentPenColor===c?'border-slate-700 scale-110 shadow-lg':'border-white hover:scale-105'}`} style={{backgroundColor:c}}/>)}
+                              </div>
+                              <div className="space-y-4">
+                                <div className="flex justify-between font-black text-slate-500 text-sm"><span>笔头大小</span><span>{brushSize}px</span></div>
+                                <input type="range" min="8" max="100" value={brushSize} onChange={e=>setBrushSize(parseInt(e.target.value))} />
+                              </div>
+                              <Button fullWidth variant="outline" onClick={()=>{
+                                setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
+                                  ...dec,
+                                  strokes: dec.strokes.slice(0, -1)
+                                } : dec));
+                              }} className="h-14 rounded-2xl text-xl font-black">✨ {t.undo}</Button>
+                          </div>
+                      )}
+                      {activeTab === 'sticker' && (
+                          <div className="space-y-6 animate-fade-in pb-10">
+                              <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+                                {STICKER_CATEGORIES.map(cat => (
+                                    <button 
+                                      key={cat.id} 
+                                      onClick={() => { setStickerCategory(cat.id); playSound('pop'); }}
+                                      className={`px-4 py-2 rounded-full font-black text-xs whitespace-nowrap transition-all border-2 ${stickerCategory === cat.id ? 'bg-pink-400 text-white border-pink-500 shadow-md scale-105' : 'bg-slate-100 text-slate-400 border-transparent hover:bg-slate-200'}`}
+                                    >
+                                      {cat.name}
+                                    </button>
+                                ))}
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                {STICKER_CATEGORIES.find(c => c.id === stickerCategory)?.stickers.map(s => (
+                                    <button key={s} onClick={() => addSticker(s)} className="aspect-square bg-slate-50 rounded-2xl border-2 border-slate-200 hover:border-pink-300 hover:scale-105 transition-all p-2 flex items-center justify-center">
+                                      <StickerPreview id={s} />
+                                    </button>
+                                ))}
+                              </div>
+                              {selectedStickerId && (
+                                <div className="bg-pink-50 p-4 rounded-3xl space-y-4 border-2 border-pink-100 animate-fade-in shadow-inner">
+                                   <div className="flex justify-between items-center text-sm font-black text-pink-500">
+                                      <span>{t.scale}</span>
+                                      <span>{Math.round((decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1) * 100)}%</span>
+                                   </div>
+                                   <input 
+                                     type="range" 
+                                     min="0.2" 
+                                     max="4" 
+                                     step="0.05" 
+                                     value={decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.scale || 1} 
+                                     onChange={(e) => {
+                                        const s = parseFloat(e.target.value);
+                                        setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
+                                          ...dec,
+                                          stickers: (dec.stickers || []).map(st => st.id === selectedStickerId ? { ...st, scale: s } : st)
+                                        } : dec));
+                                     }}
+                                   />
+                                   <div className="flex justify-between items-center text-sm font-black text-pink-500">
+                                      <span>{t.rotation}</span>
+                                      <span>{Math.round((decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.rotation || 0) * (180/Math.PI))}°</span>
+                                   </div>
+                                   <input 
+                                     type="range" 
+                                     min="-3.14159" 
+                                     max="3.14159" 
+                                     step="0.1" 
+                                     value={decorations[activeImageIndex].stickers.find(s => s.id === selectedStickerId)?.rotation || 0} 
+                                     onChange={(e) => {
+                                        const r = parseFloat(e.target.value);
+                                        setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
+                                          ...dec,
+                                          stickers: (dec.stickers || []).map(st => st.id === selectedStickerId ? { ...st, rotation: r } : st)
+                                        } : dec));
+                                     }}
+                                   />
+                                   <Button variant="danger" fullWidth className="h-12 rounded-2xl" onClick={() => {
+                                      setDecorations(prev => prev.map((dec, i) => i === activeImageIndex ? {
+                                        ...dec,
+                                        stickers: (dec.stickers || []).filter(st => st.id !== selectedStickerId)
+                                      } : dec));
+                                      setSelectedStickerId(null);
+                                      playSound('cancel');
+                                   }}>{t.delete}</Button>
                                 </div>
-                            </div>
-                        ))}
-                      </div>
-                  )}
+                              )}
+                          </div>
+                      )}
+                  </div>
+                  <div className="flex-none p-6 pt-2 bg-white/80 border-t border-slate-100 flex gap-4">
+                      <button 
+                        onClick={() => { setUploadedImages([]); setAppState(AppState.UPLOAD); playSound('cancel'); }}
+                        className="w-16 h-16 bg-sky-400 hover:bg-sky-300 border-b-6 border-sky-600 active:border-b-0 active:translate-y-1 transition-all rounded-2xl flex flex-col items-center justify-center text-white shrink-0 shadow-lg"
+                      >
+                         <span className="text-xl font-black">←</span>
+                      </button>
+                      <button 
+                        onClick={generateFinal}
+                        className="flex-1 h-16 bg-pink-500 hover:bg-pink-400 border-b-6 border-pink-700 active:border-b-0 active:translate-y-1 transition-all rounded-[1.5rem] flex items-center justify-center text-white text-2xl font-black shadow-lg"
+                      >
+                         {t.finish}
+                      </button>
+                  </div>
               </div>
-              )}
-              <div className="p-4 border-t border-slate-100 flex gap-4 bg-white"><Button variant="secondary" onClick={() => handleGoBack(AppState.UPLOAD)}>← {t.back}</Button><Button fullWidth onClick={generateFinal}>{t.finish}</Button></div>
           </div>
-      </div>
-  );
+      );
+  }
 
-  const renderLayout = () => (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 overflow-y-auto">
-           <h2 className="text-white font-black text-4xl mt-8 mb-8 animate-bounce text-3d-white flex-shrink-0">{t.ready_msg}</h2>
-           <div className="flex flex-wrap gap-8 items-center justify-center flex-grow mb-32 max-w-7xl mx-auto">
-             {finalLayoutUrls.map((url, i) => (
-               <div key={i} className="flex flex-col items-center gap-4">
-                 <div className="bg-white p-2 rounded-sm shadow-2xl max-h-[65vh] flex items-center justify-center overflow-hidden">
-                   <img src={url} className="max-h-full max-w-full w-auto object-contain" />
-                 </div>
-                 <Button onClick={() => handleDownload(url, i)} size="sm">{t.save_btn}</Button>
-               </div>
-             ))}
-           </div>
-           <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-900/95 backdrop-blur-lg flex justify-center z-50 border-t border-white/10"><div className="max-w-md w-full"><Button fullWidth variant="secondary" onClick={() => handleGoBack(AppState.EDIT)}>← {t.back}</Button></div></div>
-      </div>
-  );
+  if (appState === AppState.LAYOUT) {
+      return (
+          <div className="min-h-screen bg-slate-950 flex flex-col items-center p-8 md:p-10 overflow-y-auto pb-48 md:pb-64">
+              <h2 className="text-white font-black text-4xl md:text-6xl mb-12 md:mb-20 animate-pulse text-center drop-shadow-[0_0_30px_rgba(236,72,153,1)]">{t.ready_msg}</h2>
+              <div className="flex flex-wrap gap-10 md:gap-16 justify-center items-start px-4 md:px-10">
+                  {finalLayoutUrls.map((url, i) => (
+                      <div key={i} className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-[0_60px_100px_rgba(0,0,0,0.8)] transform hover:scale-[1.03] transition-transform duration-700">
+                          <img src={url} className="max-h-[80vh] w-auto rounded-xl md:rounded-2xl" alt="Result" />
+                      </div>
+                  ))}
+              </div>
+              <div className="fixed bottom-0 left-0 right-0 p-8 md:p-12 bg-slate-900/90 backdrop-blur-3xl flex justify-center z-50 border-t border-white/5 shadow-[-20px_0_100px_rgba(0,0,0,0.5)]">
+                <div className="max-w-4xl w-full flex flex-row gap-4 md:gap-12">
+                  <Button variant="outline" className="flex-1 h-16 md:h-24 border-3 md:border-4 border-white/20 text-white hover:bg-white/10 rounded-2xl md:rounded-[3rem] text-xl md:text-3xl font-black" onClick={() => { setUploadedImages([]); setAppState(AppState.TEMPLATE_SELECT); }}>
+                    <span>← {t.back}</span>
+                  </Button>
+                  <Button className="flex-1 h-16 md:h-24 bg-pink-500 border-pink-700 hover:bg-pink-400 rounded-2xl md:rounded-[3rem] text-xl md:text-3xl font-black shadow-pink-500/50 border-b-8" onClick={() => finalLayoutUrls.forEach(url => {
+                    const a = document.createElement('a'); a.href = url; a.download = `KIRA_${Date.now()}.png`; a.click();
+                  })}>
+                    <span>{t.save_btn}</span>
+                  </Button>
+                </div>
+              </div>
+          </div>
+      );
+  }
 
   return (
-    <>
-      {appState === AppState.TEMPLATE_SELECT && renderTemplateSelect()}
-      {appState === AppState.UPLOAD && renderUpload()}
-      {appState === AppState.CAMERA && renderCamera()}
-      {(appState === AppState.EDIT || appState === AppState.PROCESSING) && renderEditor()}
-      {appState === AppState.PROCESSING && <div className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center flex-col"><div className="w-16 h-16 border-4 border-pink-400 border-t-transparent rounded-full animate-spin"></div><p className="font-black text-pink-400 mt-4 tracking-widest">{t.loading}</p></div>}
-      {appState === AppState.LAYOUT && renderLayout()}
-    </>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff0f5]">
+        <div className="relative">
+            <div className="w-24 h-24 md:w-32 md:h-32 border-[12px] md:border-[16px] border-pink-200 border-t-pink-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl animate-bounce">💖</div>
+        </div>
+        <p className="font-black text-pink-500 text-3xl md:text-5xl mt-12 md:mt-16 animate-pulse tracking-[0.2em] md:tracking-[0.3em] uppercase">{t.loading}</p>
+    </div>
   );
 };
 

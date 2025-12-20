@@ -3,46 +3,118 @@ import { BackgroundPreset, FramePreset, LayoutTemplate } from './types';
 
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
   { id: 'bg-white', name: 'White', value: '#ffffff', type: 'color' },
-  { id: 'bg-blue', name: 'Sky Blue', value: '#e0f2fe', type: 'color' },
   { id: 'bg-pink', name: 'Sakura', value: '#fce7f3', type: 'color' },
-  { id: 'bg-purple', name: 'Lavender', value: '#f3e8ff', type: 'color' },
-  { id: 'bg-grad-1', name: 'Sunset', value: 'linear-gradient(to top left, #fbc2eb 0%, #a6c1ee 100%)', type: 'gradient' },
+  { id: 'bg-blue', name: 'Sky', value: '#e0f2fe', type: 'color' },
+  { id: 'bg-green', name: 'Mint', value: '#f0fdf4', type: 'color' },
+  { id: 'bg-cream', name: 'Cream', value: '#fffbeb', type: 'color' },
+  { id: 'bg-grad-pink', name: 'Sunset', value: 'linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)', type: 'gradient' },
+  { id: 'bg-grad-blue', name: 'Ocean', value: 'linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)', type: 'gradient' },
+  { id: 'bg-grad-lavender', name: 'Dream', value: 'linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%)', type: 'gradient' },
+  { id: 'bg-grad-aurora', name: 'Aurora', value: 'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)', type: 'gradient' },
 ];
+
+const createSVGFrame = (inner: string) => `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1333" viewBox="0 0 1000 1333">
+  ${inner}
+</svg>`)}`;
 
 export const FRAME_PRESETS: FramePreset[] = [
   { id: 'none', name: 'No Frame', src: '' },
-  { id: 'polaroid', name: 'Polaroid', src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAwIiBoZWlnaHQ9IjEzMzMiIHZpZXdCb3g9IjAgMCAxMDAwIDEzMzMiPjxyZWN0IHdpZHRoPSIxMDAwIiBoZWlnaHQ9IjEzMzMiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNjAiLz48L3N2Zz4=' },
+  { 
+    id: 'sweet', 
+    name: 'Soft Ribbon', 
+    src: createSVGFrame(`
+      <rect width="1000" height="1333" fill="none" stroke="#f472b6" stroke-width="60" />
+      <circle cx="60" cy="60" r="30" fill="white" />
+      <circle cx="940" cy="60" r="30" fill="white" />
+      <circle cx="60" cy="1273" r="30" fill="white" />
+      <circle cx="940" cy="1273" r="30" fill="white" />
+      <rect x="200" y="20" width="600" height="80" rx="40" fill="#f472b6" />
+      <text x="500" y="75" text-anchor="middle" font-family="sans-serif" font-weight="900" fill="white" font-size="40">LOVELY KIRA</text>
+    `) 
+  },
+  { 
+    id: 'cyber', 
+    name: 'Liquid Metal', 
+    src: createSVGFrame(`
+      <rect width="1000" height="1333" fill="none" stroke="#cbd5e1" stroke-width="40" />
+      <path d="M0 0 L300 0 L250 80 L0 80 Z" fill="#94a3b8" />
+      <path d="M1000 1333 L700 1333 L750 1253 L1000 1253 Z" fill="#94a3b8" />
+      <circle cx="40" cy="40" r="15" fill="#00ffff" />
+      <circle cx="960" cy="1293" r="15" fill="#ff00ff" />
+      <rect x="800" y="100" width="150" height="10" fill="#94a3b8" />
+      <rect x="850" y="120" width="100" height="10" fill="#94a3b8" />
+    `) 
+  },
+  {
+    id: 'cherry',
+    name: 'Sakura Petal',
+    src: createSVGFrame(`
+      <rect width="1000" height="1333" fill="none" stroke="#fbcfe8" stroke-width="40" />
+      <circle cx="100" cy="100" r="40" fill="#fce7f3" />
+      <circle cx="900" cy="1150" r="60" fill="#fdf2f8" />
+      <path d="M500 50 Q550 0 600 50 T700 50" fill="none" stroke="#f472b6" stroke-width="5" />
+      <text x="500" y="1280" text-anchor="middle" font-family="sans-serif" font-weight="900" fill="#ec4899" font-size="40">SAKURA MOOD</text>
+    `)
+  },
+  {
+    id: 'star_cat',
+    name: 'Midnight Cat',
+    src: createSVGFrame(`
+      <rect width="1000" height="1333" fill="none" stroke="#1e293b" stroke-width="50" />
+      <path d="M50 50 L100 20 L150 50 Z" fill="#334155" />
+      <path d="M850 50 L900 20 L950 50 Z" fill="#334155" />
+      <circle cx="100" cy="1200" r="10" fill="#fbbf24" />
+      <circle cx="200" cy="1250" r="5" fill="#fbbf24" />
+      <circle cx="900" cy="100" r="20" fill="#fcd34d" />
+    `)
+  },
+  {
+    id: 'strawberry',
+    name: 'Strawberry Gingham',
+    src: createSVGFrame(`
+      <rect width="1000" height="1333" fill="none" stroke="#ef4444" stroke-width="40" />
+      <rect x="0" y="0" width="1000" height="1333" fill="none" stroke="#fee2e2" stroke-width="20" stroke-dasharray="20,20" />
+      <circle cx="50" cy="50" r="20" fill="#ef4444" />
+      <circle cx="950" cy="1283" r="20" fill="#ef4444" />
+      <text x="500" y="80" text-anchor="middle" font-family="sans-serif" font-weight="900" fill="#ef4444" font-size="35">BERRY SWEET</text>
+    `)
+  }
 ];
 
 export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
-  { id: 'cinema', name: 'Life4Cuts', description: 'Double Strip (White/Pink)', icon: '🎞️', slots: 4, aspectRatio: 1.5 }, 
-  { id: 'polaroid', name: 'Polaroid', description: 'Blue Gradient & 5 Stars', icon: '📸', slots: 1, aspectRatio: 1 }, 
-  { id: 'standard', name: 'ID Photo', description: 'Perfect Blue Grid', icon: '📋', slots: 1, aspectRatio: 0.77 }, 
-  { id: 'driver_license', name: 'License', description: 'Pink Girl Driver Card', icon: '🪪', slots: 1, aspectRatio: 0.77 }, 
+  { id: 'cinema', name: 'Life4Cuts', description: 'Double Strip (White/Pink)', slots: 4, aspectRatio: 1.25 }, 
+  { id: 'polaroid', name: 'Polaroid', description: 'Blue Gradient', slots: 1, aspectRatio: 1 }, 
+  { id: 'standard', name: 'ID Photo', description: 'Blue Grid', slots: 1, aspectRatio: 0.77 }, 
+  { id: 'driver_license', name: 'License', description: 'Pink Card', slots: 1, aspectRatio: 0.77 }, 
 ];
 
-export const PEN_COLORS = ['#FFFFFF', '#000000', '#FF69B4', '#87CEFA', '#FFD700', '#98FB98'];
+export const PEN_COLORS = ['#FFFFFF', '#000000', '#FF69B4', '#87CEFA', '#FFD700', '#98FB98', '#FF4500'];
 
-export const STICKER_CATEGORIES = {
-  Y2K: [
-    { id: 'y2k_galactic_star', label: 'Star' },
-    { id: 'y2k_galactic_moon', label: 'Moon' }
-  ],
-  RIBBON: [
-    { id: 'coquette_ribbon_pink', label: 'Pink Silk' },
-    { id: 'coquette_ribbon_blue', label: 'Blue Gingham' }
-  ],
-  DOODLE: [
-    { id: 'purikura_doodle_sparkle', label: 'Sparkle' },
-    { id: 'purikura_doodle_heart', label: 'Heart' },
-    { id: 'purikura_doodle_whiskers', label: 'Whiskers' }
-  ],
-  CYBER: [
-    { id: 'cyber_pet_bear', label: 'Liquid Bear' },
-    { id: 'cyber_pet_bunny', label: 'Laser Bunny' }
-  ],
-  XMAS: [
-    { id: 'xmas_party_hat', label: 'Santa Hat' },
-    { id: 'xmas_party_antlers', label: 'Antlers' }
-  ]
-};
+export const STICKER_CATEGORIES = [
+  {
+    id: 'y2k',
+    name: 'Y2K Galactic',
+    stickers: ['y2k_star_chrome', 'y2k_moon_chrome', 'y2k_star_hologram', 'y2k_planet_chrome', 'y2k_cross_star']
+  },
+  {
+    id: 'coquette',
+    name: 'Coquette',
+    stickers: ['coq_bow_pink', 'coq_bow_blue', 'coq_heart_silk', 'coq_flower_silk', 'coq_ribbon_long']
+  },
+  {
+    id: 'purikura',
+    name: 'Doodles',
+    stickers: ['puri_star_white', 'puri_heart_white', 'puri_cat_whisker', 'puri_sparkle', 'puri_halo']
+  },
+  {
+    id: 'cyber',
+    name: 'Cyber Pets',
+    stickers: ['cyber_bear', 'cyber_bunny', 'cyber_cat', 'cyber_bird', 'cyber_fox']
+  },
+  {
+    id: 'xmas',
+    name: 'Xmas Party',
+    stickers: ['xmas_hat', 'xmas_deer', 'xmas_tree', 'xmas_socks', 'xmas_gift']
+  }
+];

@@ -1,55 +1,39 @@
+
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'icon' | 'danger'; 
-  fullWidth?: boolean;
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({ 
   children, 
   variant = 'primary', 
-  fullWidth = false, 
   size = 'md',
+  fullWidth = false, 
   className = '', 
   ...props 
 }) => {
-  // Base: 3D Gummy Style
-  const baseStyles = "relative inline-flex items-center justify-center font-extrabold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 active:translate-y-1 select-none";
+  const baseStyles = "inline-flex items-center justify-center font-black transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none rounded-2xl border-b-4 select-none";
   
-  const sizeStyles = {
-    sm: "text-xs py-1 px-3 rounded-lg border-b-2",
-    md: "text-sm py-3 px-5 rounded-xl border-b-4",
-    lg: "text-lg py-4 px-8 rounded-2xl border-b-[6px]",
+  const sizes = {
+    sm: "px-4 py-2 text-xs",
+    md: "px-6 py-3 text-sm",
+    lg: "px-8 py-4 text-lg"
   };
 
   const variants = {
-    // Pink Gummy
-    primary: "bg-pink-400 text-white border-pink-600 shadow-xl shadow-pink-200 hover:bg-pink-500",
-    
-    // Blue Gummy
-    secondary: "bg-sky-400 text-white border-sky-600 shadow-xl shadow-sky-200 hover:bg-sky-500",
-    
-    // Red/Danger Gummy
-    danger: "bg-red-400 text-white border-red-600 shadow-xl shadow-red-200 hover:bg-red-500",
-    
-    // White 3D Card
-    outline: "bg-white text-slate-600 border-slate-200 hover:border-pink-300 hover:text-pink-500 shadow-sm",
-    
-    // Ghost (Minimal)
-    ghost: "bg-transparent text-slate-400 hover:text-pink-500 border-b-0 py-2 active:translate-y-0 active:bg-pink-50",
-
-    // Icon Circle (Special)
-    icon: "bg-white text-pink-500 border-slate-100 hover:border-pink-300 rounded-full p-2 aspect-square border-b-4 shadow-md flex items-center justify-center"
+    primary: "bg-pink-400 text-white border-pink-600 hover:bg-pink-500 shadow-pink-200",
+    secondary: "bg-blue-400 text-white border-blue-600 hover:bg-blue-500 shadow-blue-200",
+    outline: "bg-white text-slate-500 border-slate-200 hover:border-pink-300 hover:text-pink-500",
+    ghost: "bg-transparent border-transparent border-b-0 text-slate-400 hover:text-pink-500 hover:bg-pink-50",
+    danger: "bg-rose-500 text-white border-rose-700 hover:bg-rose-600 shadow-rose-200"
   };
 
-  // Override size styles for icon/ghost to remove border-b logic if needed
-  const finalSize = variant === 'ghost' ? '' : sizeStyles[size];
-  const widthClass = fullWidth ? 'w-full flex' : '';
-  
   return (
     <button 
-      className={`${baseStyles} ${finalSize} ${variants[variant]} ${widthClass} ${className}`}
+      className={`${baseStyles} ${sizes[size]} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...props}
     >
       {children}

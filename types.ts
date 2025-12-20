@@ -1,4 +1,3 @@
-
 export enum AppState {
   TEMPLATE_SELECT = 'TEMPLATE_SELECT', 
   UPLOAD = 'UPLOAD',
@@ -19,21 +18,12 @@ export interface FramePreset {
   id: string;
   name: string;
   src: string; 
-  isCustom?: boolean;
-}
-
-export interface ProcessingOptions {
-  lighting: boolean;
-  brightness: number;
-  contrast: number;
-  saturation: number;
 }
 
 export interface LayoutTemplate {
   id: string;
   name: string;
   description: string;
-  icon: string;
   slots: number; 
   aspectRatio: number; 
 }
@@ -46,18 +36,17 @@ export interface Point {
 export interface Stroke {
   color: string;
   width: number;
+  type: 'standard' | 'neon';
   points: Point[];
-  isNeon?: boolean; 
 }
 
 export interface StickerItem {
   id: string;
-  content: string;
+  type: string;
   x: number;
   y: number;
   scale: number;
   rotation: number;
-  isFlipped?: boolean;
 }
 
 export interface DecorationState {
@@ -77,13 +66,13 @@ export interface RenderParams {
   backgroundImage?: BackgroundPreset;
   frameImage?: HTMLImageElement | null;
   lightingEnabled: boolean;
-  noiseLevel?: number;
-  filmLookStrength?: number; 
-  showDate?: boolean;
+  noiseLevel: number;
+  contrast: number; 
   decorations?: DecorationState;
   imageTransform?: ImageTransform;
   selectedStickerId?: string | null;
   isMoeMode?: boolean; 
   aspectRatio?: number;
-  isImageFit?: boolean; 
+  dateStampEnabled?: boolean;
+  dateText?: string;
 }

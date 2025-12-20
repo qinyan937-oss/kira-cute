@@ -1,6 +1,6 @@
 {
   "name": "KIRA: Sparkle Photo Booth",
-  "description": "KIRA (闪闪) is a Japanese Purikura-style photo booth app. Features automatic background removal, soft Japanese-style lighting filters, pastel background selection, and custom frame composition. Runs entirely in the browser.",
+  "description": "KIRA (闪闪) is a Japanese Purikura-style photo booth app. Features automatic background removal, soft Japanese-style lighting filters, pastel background selection, and custom frame composition.",
   "requestFramePermissions": [
     "camera"
   ]
