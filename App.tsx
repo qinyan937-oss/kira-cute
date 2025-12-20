@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, ImageTransform, StickerItem } from './types';
 import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, PEN_COLORS, STICKER_CATEGORIES } from './constants';
@@ -6,8 +7,8 @@ import { playSound } from './services/audio';
 import Button from './components/Button';
 
 const TRANSLATIONS = {
-  en: { appTitle: "KIRA", appSubtitle: "Record Sparkle", shots: "shots", tpl_cinema: "Life4Cuts", tpl_polaroid: "Polaroid", tpl_standard: "ID Photo", tpl_driver_license: "License", start_camera: "Camera", upload_photos: "Album", tab_adjust: "Edit", tab_draw: "Draw", tab_frame: "Frame", tab_sticker: "Stickers", beauty_filter: "Beauty", moe_magic: "Moe!", finish: "Finish", ready_msg: "✨ All Ready! ✨", save_btn: "Save 📥", back: "Back", loading: "Casting...", undo: "Undo", delete: "Delete", scale: "Size", rotation: "Rotate", brush_standard: "Standard", brush_neon: "Neon", how_to_shoot: "How to shoot?", select_hint: "Select", zoom: "Zoom", date_stamp: "Date Stamp", contrast: "Contrast", custom_frame: "Custom", tab_bg: "Background" },
-  zh: { appTitle: "KIRA 闪闪", appSubtitle: "记录闪耀时刻", shots: "张", tpl_cinema: "人生四格", tpl_polaroid: "蓝彩拍立得", tpl_standard: "日系证件照", tpl_driver_license: "美国驾照", start_camera: "拍照", upload_photos: "相册", tab_adjust: "调节", tab_draw: "涂鸦", tab_frame: "相框", tab_sticker: "贴纸", beauty_filter: "美颜", moe_magic: "萌化", finish: "完成", ready_msg: "✨ 制作完成！✨", save_btn: "保存图片 📥", back: "返回", loading: "施法中...", undo: "撤销", delete: "删除", scale: "大小", rotation: "旋转", brush_standard: "普通笔", brush_neon: "荧光笔", how_to_shoot: "想怎么拍？", select_hint: "选择", zoom: "画面缩放", date_stamp: "日期水印", contrast: "对比度调整", custom_frame: "自定义", tab_bg: "背景更换" }
+  en: { appTitle: "KIRA", appSubtitle: "Record Sparkle", shots: "shots", tpl_cinema: "Life4Cuts", tpl_polaroid: "Polaroid", tpl_standard: "ID Photo", tpl_driver_license: "License", start_camera: "Camera", upload_photos: "Album", tab_adjust: "Edit", tab_draw: "Draw", tab_frame: "Frame", tab_sticker: "Stickers", beauty_filter: "Beauty", moe_magic: "Moe!", finish: "Finish", ready_msg: "✨ All Ready! ✨", save_btn: "Save 📥", back: "Back", loading: "Casting...", undo: "Undo", delete: "Delete", scale: "Size", rotation: "Rotate", brush_standard: "Standard", brush_neon: "Neon", how_to_shoot: "How to shoot?", select_hint: "Select", zoom: "Zoom", date_stamp: "Date Stamp", contrast: "Contrast", custom_frame: "Custom", tab_bg: "Background", save_hint: "Tip: Long press image to save to Photos" },
+  zh: { appTitle: "KIRA 闪闪", appSubtitle: "记录闪耀时刻", shots: "张", tpl_cinema: "人生四格", tpl_polaroid: "蓝彩拍立得", tpl_standard: "日系证件照", tpl_driver_license: "美国驾照", start_camera: "拍照", upload_photos: "相册", tab_adjust: "调节", tab_draw: "涂鸦", tab_frame: "相框", tab_sticker: "贴纸", beauty_filter: "美颜", moe_magic: "萌化", finish: "完成", ready_msg: "✨ 制作完成！✨", save_btn: "保存图片 📥", back: "返回", loading: "施法中...", undo: "撤销", delete: "删除", scale: "大小", rotation: "旋转", brush_standard: "普通笔", brush_neon: "荧光笔", how_to_shoot: "想怎么拍？", select_hint: "选择", zoom: "画面缩放", date_stamp: "日期水印", contrast: "对比度调整", custom_frame: "自定义", tab_bg: "背景更换", save_hint: "提示：移动端长按图片可直接保存" }
 };
 
 const Icons = {
@@ -51,7 +52,7 @@ const Icons = {
             <div className="absolute bottom-1.5 right-1.5 text-xs text-pink-200 animate-pulse">★</div>
         </div>
     ),
-    Adjust: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>,
+    Adjust: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>,
     Frame: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M17 12h-2v2h2v-2zm-4 4h-2v2h2v-2zm8-12H3v16h18V4z"/></svg>,
     Brush: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/></svg>,
     Sticker: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="15.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M12 18c2.28 0 4.22-1.66 5-4H7c.78 2.34 2.72 4 5 4z"/></svg>
@@ -263,6 +264,42 @@ const App = () => {
     } : dec));
     setSelectedStickerId(newSticker.id);
     playSound('pop');
+  };
+
+  const handleSaveImage = async (dataUrl: string, index: number) => {
+    try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const fileName = `KIRA_${index}_${Date.now()}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        // Try Web Share API first (Best for iPad/iOS)
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'KIRA Photo Booth',
+                text: 'My KIRA Purikura photo!',
+            });
+            return;
+        }
+
+        // Fallback for desktop or non-sharing browsers
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (e) {
+        console.error("Save failed", e);
+        // Last resort
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `KIRA_${index}.png`;
+        a.click();
+    }
   };
 
   const generateFinal = async () => {
@@ -643,36 +680,42 @@ const App = () => {
           <div className="min-h-screen bg-slate-950 flex flex-col items-center p-8 md:p-10 overflow-y-auto pb-64 relative">
               {/* Fixed Header with Global message */}
               <div className="fixed top-0 left-0 right-0 h-24 bg-slate-900/90 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-8 md:px-12 z-[200] shadow-2xl">
-                 <h2 className="text-pink-400 font-black text-2xl md:text-3xl animate-pulse tracking-tight">{t.ready_msg}</h2>
+                 <h2 className="text-pink-400 font-black text-2xl md:text-3xl animate-pulse tracking-tight text-center">{t.ready_msg}</h2>
               </div>
 
               <div className="flex flex-row flex-wrap items-start justify-center gap-8 md:gap-16 mt-36 w-full max-w-7xl">
                   {finalLayoutUrls.map((url, i) => (
-                      <div key={i} className="flex flex-col items-center gap-10">
+                      <div key={i} className="flex flex-col items-center gap-6">
                         {/* Image Frame */}
                         <div className="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-[0_60px_120px_rgba(0,0,0,0.85)] transform hover:scale-[1.01] transition-all duration-700 border-2 border-white/20">
-                            <img src={url} className="max-h-[85vh] w-auto rounded-xl md:rounded-2xl" alt={`Result ${i}`} />
+                            <img 
+                                src={url} 
+                                className="max-h-[85vh] w-auto rounded-xl md:rounded-2xl cursor-pointer" 
+                                alt={`Result ${i}`} 
+                                onContextMenu={(e) => {}} // Allow context menu for long press
+                            />
                         </div>
 
-                        {/* Save Button */}
-                        <div className="z-[50] relative pb-4">
+                        {/* Save Button Group */}
+                        <div className="z-[50] relative pb-4 flex flex-col items-center gap-3">
                             <Button 
-                                className="h-16 bg-pink-500 border-pink-700 hover:bg-pink-400 rounded-full text-2xl font-black px-24 shadow-[0_15px_40px_rgba(236,72,153,0.6)]"
-                                onClick={() => {
-                                    const a = document.createElement('a'); a.href = url; a.download = `KIRA_${i}_${Date.now()}.png`; a.click();
-                                }}
+                                className="h-16 bg-pink-500 border-pink-700 hover:bg-pink-400 rounded-full text-2xl font-black px-16 md:px-24 shadow-[0_15px_40px_rgba(236,72,153,0.6)]"
+                                onClick={() => handleSaveImage(url, i)}
                             >
                                 {t.save_btn}
                             </Button>
+                            <p className="text-slate-500 font-black text-sm text-center bg-slate-900/50 py-1.5 px-4 rounded-full border border-white/10 animate-fade-in">
+                                {t.save_hint}
+                            </p>
                         </div>
                       </div>
                   ))}
 
-                  {/* Back Button - Positioned alongside Save buttons at the bottom of scroll, styled rectangularly */}
-                  <div className="mt-4 mb-20 w-full flex justify-center">
+                  {/* Back Button */}
+                  <div className="mt-8 mb-20 w-full flex justify-center">
                     <Button 
                         onClick={() => { setAppState(AppState.EDIT); playSound('pop'); }}
-                        className="h-16 bg-sky-400 hover:bg-sky-300 border-sky-600 rounded-full text-2xl font-black px-32 shadow-[0_15px_40px_rgba(56,189,248,0.4)]"
+                        className="h-16 bg-sky-400 hover:bg-sky-300 border-sky-600 rounded-full text-2xl font-black px-24 md:px-32 shadow-[0_15px_40px_rgba(56,189,248,0.4)]"
                     >
                         ← {t.back}
                     </Button>
