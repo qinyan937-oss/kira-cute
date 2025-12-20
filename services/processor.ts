@@ -462,8 +462,8 @@ export const generateLayoutSheetAsync = async (canvases: string[], templateId: s
         const ctx = canvas.getContext('2d');
         if (!ctx) return [];
         
-        // 1. Background
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1800, 1100);
+        // 1. Background - Updated to be "pinker" as per user request
+        ctx.fillStyle = '#fce7f3'; ctx.fillRect(0, 0, 1800, 1100);
         
         // 2. Header
         ctx.fillStyle = '#f472b6'; ctx.fillRect(0, 0, 1800, 150);
@@ -471,15 +471,15 @@ export const generateLayoutSheetAsync = async (canvases: string[], templateId: s
         ctx.textAlign = 'left'; ctx.fillText("GIRLSWHODRIVE. CLUB", 50, 100);
         ctx.textAlign = 'right'; ctx.fillText("DRIVER LICENCE", 1750, 100);
 
-        // 3. Grid lines
-        ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 1;
-        for(let i=0; i<1800; i+=40) { ctx.beginPath(); ctx.moveTo(i, 150); ctx.lineTo(i, 1100); ctx.stroke(); }
-        for(let i=150; i<1100; i+=40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1800, i); ctx.stroke(); }
+        // 3. Grid lines - White grid on pink background
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        for(let i=0; i<1800; i+=60) { ctx.beginPath(); ctx.moveTo(i, 150); ctx.lineTo(i, 1100); ctx.stroke(); }
+        for(let i=150; i<1100; i+=60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1800, i); ctx.stroke(); }
 
         // 4. Photo on left
         if (images[0]) {
             ctx.drawImage(images[0], 80, 250, 550, 715);
-            ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 2;
+            ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 4;
             ctx.strokeRect(80, 250, 550, 715);
         }
 
@@ -487,7 +487,7 @@ export const generateLayoutSheetAsync = async (canvases: string[], templateId: s
         const startX = 700;
         ctx.textAlign = 'left';
         
-        ctx.fillStyle = '#f472b6'; ctx.font = '900 50px sans-serif';
+        ctx.fillStyle = '#ec4899'; ctx.font = '900 50px sans-serif';
         ctx.fillText("DL 12345678", startX, 330);
         
         ctx.fillStyle = '#ef4444'; ctx.font = '900 50px sans-serif';
@@ -526,7 +526,7 @@ export const generateLayoutSheetAsync = async (canvases: string[], templateId: s
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 2400, 1600);
         ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 2;
         for(let i=0; i<2400; i+=60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1600); ctx.stroke(); }
-        for(let i=1600; i<1600; i+=60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(2400, i); ctx.stroke(); }
+        for(let i=0; i<1600; i+=60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(2400, i); ctx.stroke(); }
 
         // 2. Main Photos layout
         if (images[0]) {
