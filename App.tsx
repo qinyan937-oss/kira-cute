@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { AppState, BackgroundPreset, FramePreset, LayoutTemplate, DecorationState, Stroke, ImageTransform, StickerItem } from './types';
 import { BACKGROUND_PRESETS, FRAME_PRESETS, LAYOUT_TEMPLATES, PEN_COLORS, STICKER_CATEGORIES } from './constants';
 import { loadImage, renderComposite, generateLayoutSheetAsync, drawStickerAsset } from './services/processor';
-import { playSound } from './services/audio';
+import { playSound, toggleBGM } from './services/audio';
 import Button from './components/Button';
 
 const TRANSLATIONS = {
@@ -80,6 +81,7 @@ const App = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<LayoutTemplate>(LAYOUT_TEMPLATES[0]);
   const [uploadedImages, setUploadedImages] = useState<HTMLImageElement[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isBgmPlaying, setIsBgmPlaying] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'adjust' | 'frame' | 'draw' | 'sticker'>('adjust');
   const [stickerCategory, setStickerCategory] = useState(STICKER_CATEGORIES[0].id);
@@ -109,6 +111,10 @@ const App = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const frameUploadRef = useRef<HTMLInputElement>(null);
   const [finalLayoutUrls, setFinalLayoutUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    toggleBGM(isBgmPlaying);
+  }, [isBgmPlaying]);
 
   useEffect(() => {
     const handleGlobalUp = () => { 
@@ -324,6 +330,17 @@ const App = () => {
   if (appState === AppState.TEMPLATE_SELECT) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center py-10 px-4 md:px-12 relative overflow-hidden">
+        {/* Arcade Style BGM Toggle Button */}
+        <button 
+          onClick={() => { 
+            playSound('arcade_press');
+            setIsBgmPlaying(!isBgmPlaying); 
+          }}
+          className={`fixed top-8 right-8 z-[200] w-16 h-16 rounded-full border-[6px] border-white shadow-[0_8px_0_rgb(200,200,200),0_15px_20px_rgba(0,0,0,0.2)] flex items-center justify-center transition-all active:translate-y-[4px] active:shadow-[0_4px_0_rgb(200,200,200),0_8px_10px_rgba(0,0,0,0.2)] ${isBgmPlaying ? 'bg-pink-400 animate-spin-slow' : 'bg-slate-400 opacity-80'}`}
+        >
+          <span className="text-3xl drop-shadow-md">{isBgmPlaying ? '🎵' : '🔇'}</span>
+        </button>
+
         <div className="z-10 text-center mb-10 md:mb-14">
             <h1 className="text-6xl md:text-8xl font-black mb-3 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
             <p className="text-3xl md:text-5xl font-black text-jelly animate-float">{t.appSubtitle}</p>
