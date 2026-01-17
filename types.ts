@@ -1,3 +1,4 @@
+
 export enum AppState {
   TEMPLATE_SELECT = 'TEMPLATE_SELECT', 
   UPLOAD = 'UPLOAD',
@@ -36,7 +37,7 @@ export interface Point {
 export interface Stroke {
   color: string;
   width: number;
-  type: 'standard' | 'neon';
+  type: 'standard' | 'neon' | 'diamond';
   points: Point[];
 }
 

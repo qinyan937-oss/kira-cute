@@ -7,8 +7,8 @@ import { playSound, toggleBGM } from './services/audio';
 import Button from './components/Button';
 
 const TRANSLATIONS = {
-  en: { appTitle: "KIRA", appSubtitle: "Record Sparkle", shots: "shots", tpl_cinema: "Life4Cuts", tpl_polaroid: "Polaroid", tpl_standard: "ID Photo", tpl_driver_license: "License", start_camera: "Camera", upload_photos: "Album", tab_adjust: "Edit", tab_draw: "Draw", tab_frame: "Frame", tab_sticker: "Stickers", beauty_filter: "Beauty", moe_magic: "Moe!", finish: "Finish", ready_msg: "✨ All Ready! ✨", save_btn: "Save 📥", back: "Back", loading: "Casting...", undo: "Undo", delete: "Delete", scale: "Size", rotation: "Rotate", brush_standard: "Standard", brush_neon: "Neon", how_to_shoot: "How to shoot?", select_hint: "Select", zoom: "Zoom", date_stamp: "Date Stamp", contrast: "Contrast", custom_frame: "Custom", tab_bg: "Background", save_hint: "Tip: Long press image to save to Photos" },
-  zh: { appTitle: "KIRA 闪闪", appSubtitle: "记录闪耀时刻", shots: "张", tpl_cinema: "人生四格", tpl_polaroid: "蓝彩拍立得", tpl_standard: "日系证件照", tpl_driver_license: "美国驾照", start_camera: "拍照", upload_photos: "相册", tab_adjust: "调节", tab_draw: "涂鸦", tab_frame: "相框", tab_sticker: "贴纸", beauty_filter: "美颜", moe_magic: "萌化", finish: "完成", ready_msg: "✨ 制作完成！✨", save_btn: "保存图片 📥", back: "返回", loading: "施法中...", undo: "撤销", delete: "删除", scale: "大小", rotation: "旋转", brush_standard: "普通笔", brush_neon: "荧光笔", how_to_shoot: "想怎么拍？", select_hint: "选择", zoom: "画面缩放", date_stamp: "日期水印", contrast: "对比度调整", custom_frame: "自定义", tab_bg: "背景更换", save_hint: "提示：移动端长按图片可直接保存" }
+  en: { appTitle: "KIRA", appSubtitle: "Record Sparkle", shots: "shots", tpl_cinema: "Life4Cuts", tpl_polaroid: "Polaroid", tpl_standard: "ID Photo", tpl_driver_license: "License", start_camera: "Camera", upload_photos: "Album", tab_adjust: "Edit", tab_draw: "Draw", tab_frame: "Frame", tab_sticker: "Stickers", beauty_filter: "Beauty", moe_magic: "Moe!", finish: "Finish", ready_msg: "✨ All Ready! ✨", save_btn: "Save 📥", back: "Back", loading: "Casting...", undo: "Undo", delete: "Delete", scale: "Size", rotation: "Rotate", brush_standard: "Standard", brush_neon: "Neon", brush_diamond: "Diamond", how_to_shoot: "How to shoot?", select_hint: "Select", zoom: "Zoom", date_stamp: "Date Stamp", contrast: "Contrast", custom_frame: "Custom", tab_bg: "Background", save_hint: "Tip: Long press image to save to Photos", quick_shoot: "Quick Shoot", quick_edit: "Quick Edit", more_templates: "Templates" },
+  zh: { appTitle: "KIRA 闪闪", appSubtitle: "记录闪耀时刻", shots: "张", tpl_cinema: "人生四格", tpl_polaroid: "蓝彩拍立得", tpl_standard: "日系证件照", tpl_driver_license: "美国驾照", start_camera: "拍照", upload_photos: "相册", tab_adjust: "调节", tab_draw: "涂鸦", tab_frame: "相框", tab_sticker: "贴纸", beauty_filter: "美颜", moe_magic: "萌化", finish: "完成", ready_msg: "✨ 制作完成！✨", save_btn: "保存图片 📥", back: "返回", loading: "施法中...", undo: "撤销", delete: "删除", scale: "大小", rotation: "旋转", brush_standard: "普通笔", brush_neon: "荧光笔", brush_diamond: "钻石笔", how_to_shoot: "想怎么拍？", select_hint: "选择", zoom: "画面缩放", date_stamp: "日期水印", contrast: "对比度调整", custom_frame: "自定义", tab_bg: "背景更换", save_hint: "提示：移动端长按图片可直接保存", quick_shoot: "即刻拍照", quick_edit: "自由修图", more_templates: "更多模板" }
 };
 
 const Icons = {
@@ -55,7 +55,9 @@ const Icons = {
     Adjust: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>,
     Frame: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M17 12h-2v2h2v-2zm-4 4h-2v2h2v-2zm8-12H3v16h18V4z"/></svg>,
     Brush: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/></svg>,
-    Sticker: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="15.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M12 18c2.28 0 4.22-1.66 5-4H7c.78 2.34 2.72 4 5 4z"/></svg>
+    Sticker: () => <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><circle cx="15.5" cy="9.5" r="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M12 18c2.28 0 4.22-1.66 5-4H7c.78 2.34 2.72 4 5 4z"/></svg>,
+    CameraQuick: () => <svg viewBox="0 0 24 24" className="w-12 h-12 mb-2 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+    EditQuick: () => <svg viewBox="0 0 24 24" className="w-12 h-12 mb-2 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
 };
 
 const StickerPreview = ({ id }: { id: string }) => {
@@ -87,7 +89,7 @@ const App = () => {
   const [stickerCategory, setStickerCategory] = useState(STICKER_CATEGORIES[0].id);
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
 
-  const [brushType, setBrushType] = useState<'standard' | 'neon'>('neon');
+  const [brushType, setBrushType] = useState<'standard' | 'neon' | 'diamond'>('neon');
   const [lightingEnabled, setLightingEnabled] = useState(true); 
   const [isMoeMode, setIsMoeMode] = useState(true);
   const [dateStampEnabled, setDateStampEnabled] = useState(true);
@@ -151,11 +153,36 @@ const App = () => {
   const handleTemplateSelect = (tpl: LayoutTemplate) => { 
     setSelectedTemplate(tpl); 
     setUploadedImages([]);
-    setActiveImageIndex(0); // CRITICAL: Reset index when template changes
+    setActiveImageIndex(0); 
     setDecorations(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
     setImageTransforms(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
     setAppState(AppState.UPLOAD); 
     playSound('pop'); 
+  };
+
+  const handleQuickShoot = () => {
+    // 使用通用 ID 'simple' 确保不加载任何默认相框或网格布局
+    const tpl: LayoutTemplate = { id: 'simple', name: 'Quick', description: 'Raw Photo', slots: 1, aspectRatio: 1 };
+    setSelectedTemplate(tpl);
+    setUploadedImages([]);
+    setActiveImageIndex(0);
+    // 显式确保 decorations 初始为空（无相框）
+    setDecorations(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
+    setImageTransforms(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
+    playSound('pop');
+    startCamera();
+  };
+
+  const handleQuickEdit = () => {
+    const tpl: LayoutTemplate = { id: 'simple', name: 'Quick', description: 'Raw Photo', slots: 1, aspectRatio: 1 };
+    setSelectedTemplate(tpl);
+    setUploadedImages([]);
+    setActiveImageIndex(0);
+    setDecorations(Array.from({ length: 4 }, () => ({ strokes: [], stickers: [] })));
+    setImageTransforms(Array.from({ length: 4 }, () => ({ x: 0, y: 0, scale: 1 })));
+    setAppState(AppState.UPLOAD);
+    playSound('pop');
+    setTimeout(() => fileInputRef.current?.click(), 100);
   };
 
   const startCamera = async () => {
@@ -329,7 +356,7 @@ const App = () => {
 
   if (appState === AppState.TEMPLATE_SELECT) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center py-10 px-4 md:px-12 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center py-10 px-4 md:px-12 relative overflow-y-auto overflow-x-hidden scrollbar-hide">
         {/* Arcade Style BGM Toggle Button */}
         <button 
           onClick={() => { 
@@ -341,11 +368,51 @@ const App = () => {
           <span className="text-3xl drop-shadow-md">{isBgmPlaying ? '🎵' : '🔇'}</span>
         </button>
 
-        <div className="z-10 text-center mb-10 md:mb-14">
+        <div className="z-10 text-center mb-8 md:mb-12">
             <h1 className="text-6xl md:text-8xl font-black mb-3 tracking-tight text-3d animate-pulse">{t.appTitle}</h1>
             <p className="text-3xl md:text-5xl font-black text-jelly animate-float">{t.appSubtitle}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 z-10 w-full max-w-7xl px-4">
+
+        {/* Primary Action Hero Area */}
+        <div className="z-10 w-full max-w-7xl px-4 grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <button 
+                onClick={handleQuickShoot}
+                className="group relative bg-gradient-to-br from-pink-400 to-rose-500 rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(244,114,182,0.4)] hover:-translate-y-2 transition-all duration-500 overflow-hidden active:scale-95 border-b-8 border-rose-700 flex flex-col items-center justify-center text-white"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-20 transform translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                    <Icons.CameraQuick />
+                </div>
+                <Icons.CameraQuick />
+                <h2 className="text-3xl md:text-4xl font-black tracking-widest mt-2">{t.quick_shoot}</h2>
+                <div className="mt-4 px-4 py-1.5 bg-white/20 rounded-full text-sm font-black uppercase tracking-tighter backdrop-blur-sm border border-white/30">
+                    Auto-ID Template • Camera Access
+                </div>
+            </button>
+
+            <button 
+                onClick={handleQuickEdit}
+                className="group relative bg-gradient-to-br from-sky-400 to-blue-500 rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(56,189,248,0.4)] hover:-translate-y-2 transition-all duration-500 overflow-hidden active:scale-95 border-b-8 border-blue-700 flex flex-col items-center justify-center text-white"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-20 transform translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                    <Icons.EditQuick />
+                </div>
+                <Icons.EditQuick />
+                <h2 className="text-3xl md:text-4xl font-black tracking-widest mt-2">{t.quick_edit}</h2>
+                <div className="mt-4 px-4 py-1.5 bg-white/20 rounded-full text-sm font-black uppercase tracking-tighter backdrop-blur-sm border border-white/30">
+                    Pick Image • Sticker Studio
+                </div>
+            </button>
+        </div>
+
+        <div className="z-10 w-full max-w-7xl px-4 mb-6">
+            <div className="flex items-center gap-4">
+                <div className="h-[2px] flex-1 bg-pink-200"></div>
+                <span className="font-black text-pink-400 text-lg md:text-xl uppercase tracking-[0.3em]">{t.more_templates}</span>
+                <div className="h-[2px] flex-1 bg-pink-200"></div>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 z-10 w-full max-w-7xl px-4 mb-12">
           {LAYOUT_TEMPLATES.map(tpl => (
             <button 
                 key={tpl.id} 
@@ -363,10 +430,25 @@ const App = () => {
             </button>
           ))}
         </div>
-        <div className="mt-12 md:mt-20 flex gap-4 z-10 font-black text-lg md:text-xl">
+        <div className="mb-12 flex gap-4 z-10 font-black text-lg md:text-xl">
             <button onClick={() => setLang('en')} className={`px-4 py-2 transition-all ${lang==='en'?'text-pink-500':'text-slate-400 opacity-60'}`}>English</button>
             <button onClick={() => setLang('zh')} className={`px-6 py-2 rounded-xl transition-all ${lang==='zh'?'bg-pink-400 text-white shadow-lg':'text-slate-400 opacity-60'}`}>中文</button>
         </div>
+        
+        {/* Hidden inputs needed for functionality */}
+        <input type="file" multiple ref={fileInputRef} className="hidden" onChange={(e) => {
+              if (e.target.files) {
+                  const files = Array.from(e.target.files).slice(0, selectedTemplate.slots);
+                  Promise.all(files.map((f: File) => loadImage(URL.createObjectURL(f)).catch(err => null))).then(imgs => {
+                      const validImgs = imgs.filter(img => img !== null) as HTMLImageElement[];
+                      if (validImgs.length > 0) {
+                        setUploadedImages(validImgs); 
+                        setAppState(AppState.EDIT); 
+                        playSound('success');
+                      }
+                  });
+              }
+        }} />
       </div>
     );
   }
@@ -434,7 +516,7 @@ const App = () => {
               </button>
               <Button variant="ghost" onClick={() => {
                    const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks();
-                   tracks?.forEach(t => t.stop()); setAppState(AppState.UPLOAD);
+                   tracks?.forEach(t => t.stop()); setAppState(AppState.TEMPLATE_SELECT);
               }} className="text-white text-3xl font-black uppercase">{t.back}</Button>
           </div>
       </div>
@@ -606,9 +688,10 @@ const App = () => {
                       )}
                       {activeTab === 'draw' && (
                           <div className="space-y-8 animate-fade-in pb-10">
-                              <div className="flex gap-3 p-1.5 bg-slate-100 rounded-[2rem]">
-                                  <button onClick={()=>setBrushType('standard')} className={`flex-1 py-3 rounded-2xl font-black text-base transition-all ${brushType==='standard'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_standard}</button>
-                                  <button onClick={()=>setBrushType('neon')} className={`flex-1 py-3 rounded-2xl font-black text-base transition-all ${brushType==='neon'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_neon}</button>
+                              <div className="flex gap-2 p-1.5 bg-slate-100 rounded-[2.5rem]">
+                                  <button onClick={()=>setBrushType('standard')} className={`flex-1 py-3 rounded-[2rem] font-black text-sm transition-all ${brushType==='standard'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_standard}</button>
+                                  <button onClick={()=>setBrushType('neon')} className={`flex-1 py-3 rounded-[2rem] font-black text-sm transition-all ${brushType==='neon'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_neon}</button>
+                                  <button onClick={()=>setBrushType('diamond')} className={`flex-1 py-3 rounded-[2rem] font-black text-sm transition-all ${brushType==='diamond'?'bg-white shadow-md text-pink-500':'text-slate-400'}`}>{t.brush_diamond}</button>
                               </div>
                               <div className="grid grid-cols-4 gap-4 justify-items-center">
                                   {PEN_COLORS.map(c => <button key={c} onClick={()=>setCurrentPenColor(c)} className={`w-10 h-10 rounded-full border-4 transition-transform ${currentPenColor===c?'border-slate-700 scale-110 shadow-lg':'border-white hover:scale-105'}`} style={{backgroundColor:c}}/>)}
@@ -651,7 +734,7 @@ const App = () => {
                       )}
                   </div>
                   <div className="flex-none p-6 pt-2 bg-white/80 border-t border-slate-100 flex gap-4">
-                      <button onClick={() => { setUploadedImages([]); setAppState(AppState.UPLOAD); playSound('cancel'); }} className="w-16 h-16 bg-sky-400 border-b-6 border-sky-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"><span className="text-xl font-black">←</span></button>
+                      <button onClick={() => { setUploadedImages([]); setAppState(AppState.TEMPLATE_SELECT); playSound('cancel'); }} className="w-16 h-16 bg-sky-400 border-b-6 border-sky-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"><span className="text-xl font-black">←</span></button>
                       <button onClick={generateFinal} className="flex-1 h-16 bg-pink-500 border-b-6 border-pink-700 rounded-[1.5rem] flex items-center justify-center text-white text-2xl font-black shadow-lg">{t.finish}</button>
                   </div>
               </div>

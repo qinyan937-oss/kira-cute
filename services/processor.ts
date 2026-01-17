@@ -1,3 +1,4 @@
+
 import { BackgroundPreset, DecorationState, RenderParams, StickerItem } from "../types";
 
 export const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -320,6 +321,33 @@ export const renderComposite = (params: RenderParams) => {
                 drawSmoothPath(ctx, s.points);
                 ctx.shadowBlur = 0; ctx.strokeStyle = '#fff'; ctx.lineWidth = s.width * 0.4; ctx.globalAlpha = 1.0;
                 drawSmoothPath(ctx, s.points);
+            } else if (s.type === 'diamond') {
+                // Diamond Brush: Colored trail + Sparkling diamonds
+                ctx.strokeStyle = s.color; ctx.lineWidth = s.width; ctx.globalAlpha = 0.3;
+                drawSmoothPath(ctx, s.points);
+
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 12;
+
+                s.points.forEach((p, pIdx) => {
+                    // Sparsely draw diamonds every few points for "sparkle" effect
+                    if (pIdx % 5 === 0) {
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(Math.PI / 4 + (Math.random() * 0.2 - 0.1)); // Random jitter
+                        const dSize = s.width * 0.7 * (0.8 + Math.random() * 0.4);
+                        ctx.fillRect(-dSize / 2, -dSize / 2, dSize, dSize);
+                        
+                        // Cross sparkle highlight
+                        ctx.fillStyle = '#fff';
+                        ctx.globalAlpha = 0.8;
+                        ctx.fillRect(-dSize, -2, dSize * 2, 4);
+                        ctx.fillRect(-2, -dSize, 4, dSize * 2);
+                        ctx.restore();
+                    }
+                });
             } else {
                 ctx.strokeStyle = s.color; ctx.lineWidth = s.width;
                 drawSmoothPath(ctx, s.points);

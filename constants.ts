@@ -14,273 +14,254 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
 ];
 
 const createSVGFrame = (inner: string) => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1333" viewBox="0 0 1000 1333">${inner}</svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1333" viewBox="0 0 1000 1333">
+      <defs>
+        <filter id="complex-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.3"/>
+          <feDropShadow dx="0" dy="20" stdDeviation="25" flood-opacity="0.15"/>
+        </filter>
+        <filter id="inner-recess">
+          <feFlood flood-color="black" flood-opacity="0.2" />
+          <feComposite in2="SourceGraphic" operator="out" />
+          <feGaussianBlur stdDeviation="8" />
+          <feComposite in2="SourceGraphic" operator="atop" />
+        </filter>
+        <filter id="glossy-3d">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+          <feSpecularLighting in="blur" surfaceScale="5" specularConstant="0.8" specularExponent="20" lighting-color="white" result="specOut">
+            <fePointLight x="-5000" y="-10000" z="20000"/>
+          </feSpecularLighting>
+          <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut"/>
+          <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+        </filter>
+        <linearGradient id="metal-gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fef3c7" />
+          <stop offset="50%" stop-color="#fbbf24" />
+          <stop offset="100%" stop-color="#d97706" />
+        </linearGradient>
+      </defs>
+      ${inner}
+    </svg>`;
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
-// Helper components for SVG drawing
-const drawFlower = (x: number, y: number, color: string) => `
-  <circle cx="${x}" cy="${y}" r="15" fill="#fde047" />
-  <circle cx="${x}" cy="${y-20}" r="12" fill="${color}" />
-  <circle cx="${x+18}" cy="${y-8}" r="12" fill="${color}" />
-  <circle cx="${x+12}" cy="${y+15}" r="12" fill="${color}" />
-  <circle cx="${x-12}" cy="${y+15}" r="12" fill="${color}" />
-  <circle cx="${x-18}" cy="${y-8}" r="12" fill="${color}" />
+// --- 3D DECORATION HELPERS ---
+const draw3DCloud = (x: number, y: number, color: string = 'white') => `
+  <g filter="url(#complex-shadow)">
+    <g filter="url(#glossy-3d)">
+      <circle cx="${x}" cy="${y}" r="40" fill="${color}" />
+      <circle cx="${x+45}" cy="${y}" r="52" fill="${color}" />
+      <circle cx="${x+95}" cy="${y}" r="40" fill="${color}" />
+      <circle cx="${x+30}" cy="${y-30}" r="45" fill="${color}" />
+      <circle cx="${x+65}" cy="${y-30}" r="45" fill="${color}" />
+    </g>
+  </g>
 `;
 
-const drawStrawberry = (x: number, y: number) => `
-  <path d="M${x},${y+20} Q${x-25},${y+20} ${x-20},${y-15} Q${x},${y-35} ${x+20},${y-15} Q${x+25},${y+20} ${x},${y+20}" fill="#f87171" />
-  <circle cx="${x-5}" cy="${y-5}" r="2" fill="white" opacity="0.6"/>
-  <circle cx="${x+8}" cy="${y+5}" r="2" fill="white" opacity="0.6"/>
-  <path d="M${x-15},${y-22} Q${x},${y-40} ${x+15},${y-22} L${x},${y-25} Z" fill="#4ade80" />
+const draw3DBow = (x: number, y: number, scale: number, color: string) => `
+  <g transform="translate(${x},${y}) scale(${scale})" filter="url(#complex-shadow)">
+    <g filter="url(#glossy-3d)">
+        <ellipse cx="-22" cy="0" rx="30" ry="22" fill="${color}" transform="rotate(-15 -22 0)" />
+        <ellipse cx="22" cy="0" rx="30" ry="22" fill="${color}" transform="rotate(15 22 0)" />
+        <circle cx="0" cy="0" r="14" fill="${color}" />
+        <path d="M-12,12 Q-20,40 -35,35 M12,12 Q20,40 35,35" stroke="${color}" stroke-width="12" fill="none" stroke-linecap="round" />
+    </g>
+  </g>
 `;
+
+const draw3DStar = (x: number, y: number, r: number, color: string) => {
+    let pts = "";
+    for (let i = 0; i < 10; i++) {
+        let a = (i * Math.PI) / 5 - Math.PI/2;
+        let rd = i % 2 === 0 ? r : r * 0.45;
+        pts += `${x + Math.cos(a) * rd},${y + Math.sin(a) * rd} `;
+    }
+    return `<polygon points="${pts}" fill="${color}" filter="url(#glossy-3d)" />`;
+};
+
+// --- RENDER HELPERS ---
+// This path creates a frame with a hole using even-odd fill rule.
+const framePath = (fill: string, holeScale = 0.8) => {
+    const margin = (1000 * (1 - holeScale)) / 2;
+    const hMarginW = 1000 - margin;
+    const hMarginH = 1150; // Custom height for bottom text space
+    return `<path d="M0,0 H1000 V1333 H0 Z M${margin},${margin} V${hMarginH} H${hMarginW} V${margin} Z" fill="${fill}" fill-rule="evenodd" filter="url(#inner-recess)" />`;
+};
 
 export const FRAME_PRESETS: FramePreset[] = [
   { id: 'none', name: 'No Frame', src: '' },
   { 
-    id: 'tea_party', 
-    name: 'Tea Party', 
+    id: '3d_dreamy_wand', 
+    name: 'Dreamy Magic', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1213 H880 V120 Z" fill="#fce7f3" fill-rule="evenodd" />
-      <g stroke="#db2777" stroke-width="4" fill="none">
-        <path d="M50,110 Q20,110 20,80 Q20,50 50,50 H120 Q150,50 150,80 Q150,110 120,110" fill="#fff" />
-        <path d="M80,50 V40 M100,50 V40" stroke-linecap="round"/>
-        <circle cx="85" cy="80" r="10" fill="#f472b6" stroke="none"/>
+      ${framePath('#ede9fe', 0.82)}
+      ${draw3DCloud(120, 100, "white")} 
+      ${draw3DCloud(680, 1220, "white")}
+      <g transform="translate(180, 180) rotate(-45)" filter="url(#complex-shadow)">
+        <rect x="-6" y="0" width="12" height="220" fill="#a78bfa" rx="6" filter="url(#glossy-3d)" />
+        ${draw3DStar(0, -20, 50, "#fde047")}
       </g>
-      <g transform="translate(850, 80)">
-        <path d="M0,40 Q40,40 40,20 Q40,0 20,0 H-20 Q-40,0 -40,20 Q-40,40 0,40" fill="#f9fafb" stroke="#374151" stroke-width="3"/>
-        <path d="M40,20 Q55,20 55,10 Q55,0 40,0" stroke="#374151" stroke-width="3"/>
-        <path d="M0,15 L0,5" stroke="#92400e" stroke-width="8"/>
-      </g>
-      ${drawStrawberry(500, 70)}
-      ${drawStrawberry(500, 1260)}
-      ${drawFlower(60, 400, "#c084fc")}
-      ${drawFlower(940, 400, "#c084fc")}
-      ${drawFlower(60, 900, "#60a5fa")}
-      ${drawFlower(940, 900, "#60a5fa")}
+      <text x="500" y="1250" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#7c3aed" font-size="100" filter="url(#complex-shadow)">DREAMY</text>
+      ${draw3DStar(920, 140, 40, "#fef08a")}
+      ${draw3DStar(80, 1180, 30, "#fef08a")}
     `) 
   },
   { 
-    id: 'cute_gingham', 
-    name: 'Cute Gingham', 
+    id: '3d_puffy_puppy', 
+    name: 'Plush Puppy', 
+    src: createSVGFrame(`
+      ${framePath('#ffedd5', 0.84)}
+      <g transform="translate(180, 1200)" filter="url(#complex-shadow)">
+        <circle cx="0" cy="0" r="75" fill="#fafaf9" filter="url(#glossy-3d)" />
+        <circle cx="-55" cy="-45" r="40" fill="#fafaf9" filter="url(#glossy-3d)" />
+        <circle cx="55" cy="-45" r="40" fill="#fafaf9" filter="url(#glossy-3d)" />
+        <circle cx="-25" cy="-10" r="8" fill="#1c1917" />
+        <circle cx="25" cy="-10" r="8" fill="#1c1917" />
+        <ellipse cx="0" cy="18" rx="12" ry="8" fill="#f87171" opacity="0.6" />
+      </g>
+      ${draw3DBow(860, 1180, 1.3, "#fb7185")}
+      <circle cx="900" cy="100" r="80" fill="#fde047" filter="url(#glossy-3d)" />
+      <circle cx="860" cy="80" r="80" fill="#ffedd5" />
+      <text x="520" y="1220" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#9a3412" font-size="80">PUPPY LOVE</text>
+    `) 
+  },
+  { 
+    id: '3d_y2k_chrome', 
+    name: 'Chrome Y2K', 
     src: createSVGFrame(`
       <defs>
-        <pattern id="gingham" width="80" height="80" patternUnits="userSpaceOnUse">
-          <rect width="80" height="80" fill="#fff" />
-          <rect width="80" height="40" fill="#fbcfe8" opacity="0.4" />
-          <rect width="40" height="80" fill="#ccfbf1" opacity="0.4" />
+        <pattern id="plaid-3d" width="80" height="80" patternUnits="userSpaceOnUse">
+          <rect width="80" height="80" fill="#fdf2f8" />
+          <rect width="80" height="40" fill="#e0f2fe" opacity="0.5" />
+          <rect width="40" height="80" fill="#e0f2fe" opacity="0.5" />
         </pattern>
       </defs>
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1213 H880 V120 Z" fill="url(#gingham)" fill-rule="evenodd" />
-      <g transform="translate(500, 1260)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#ec4899" font-size="80">Cute!</text>
+      ${framePath('url(#plaid-3d)', 0.8)}
+      <path d="M0,0 H1000 V120 H0 Z" fill="url(#metal-gold)" opacity="0.9" filter="url(#glossy-3d)" />
+      <path d="M0,1050 H1000 V1333 H0 Z" fill="url(#metal-gold)" opacity="0.9" filter="url(#glossy-3d)" />
+      <g transform="translate(500, 1210)" filter="url(#complex-shadow)">
+        <text text-anchor="middle" font-family="Impact, sans-serif" font-weight="900" fill="#ec4899" font-size="110" stroke="white" stroke-width="12" paint-order="stroke">BEST FRIENDS</text>
       </g>
-      <path d="M60,60 Q80,20 100,60 Q120,100 80,100 Q40,100 60,60" fill="#f472b6" />
-      <path d="M880,60 Q900,20 920,60 Q940,100 900,100 Q860,100 880,60" fill="#a78bfa" />
-      <path d="M60,1200 L100,1200 L80,1240 Z" fill="#fde047" />
-      <circle cx="900" cy="1220" r="25" fill="#fb7185" />
-      <path d="M870,1220 H930" stroke="white" stroke-width="4" stroke-linecap="round"/>
+      ${draw3DBow(120, 1100, 1.4, "#f472b6")}
+      ${draw3DBow(880, 1100, 1.4, "#60a5fa")}
+      ${[200, 400, 600, 800].map(x => draw3DStar(x, 60, 25, "white")).join('')}
     `) 
   },
   { 
-    id: 'magic_vibes', 
-    name: 'Magic Vibes', 
+    id: '3d_night_bear', 
+    name: 'Cosmic Bear', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M100,100 V1050 H900 V100 Z" fill="#d1fae5" fill-rule="evenodd" />
-      <g transform="translate(500, 1200)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#059669" font-size="80">Magic Vibes</text>
+      ${framePath('#1e1b4b', 0.82)}
+      <g transform="translate(850, 1200)" filter="url(#complex-shadow)">
+        <circle cx="0" cy="0" r="85" fill="#7c2d12" filter="url(#glossy-3d)" />
+        <circle cx="-60" cy="-50" r="40" fill="#7c2d12" filter="url(#glossy-3d)" />
+        <circle cx="60" cy="-50" r="40" fill="#7c2d12" filter="url(#glossy-3d)" />
+        <path d="M-30,-5 Q0,15 30,-5" stroke="white" stroke-width="6" fill="none" />
+        <path d="M-35,-25 L-15,-25 M15,-25 L35,-25" stroke="white" stroke-width="5" stroke-linecap="round" />
       </g>
-      <g transform="translate(80, 80)">
-        <path d="M0,30 V0 H20 V30 Q20,50 0,50 Q-20,50 -20,30 Z" fill="#a78bfa" />
-        <rect x="-5" y="-10" width="30" height="10" fill="#78350f" />
-      </g>
-      <g transform="translate(900, 1180)">
-        <path d="M-40,40 Q-60,0 0,-20 Q60,0 40,40" fill="#4ade80" />
-        <circle cx="-15" cy="5" r="4" fill="#166534" />
-        <path d="M40,0 L60,-20" stroke="#166534" stroke-width="4" />
-      </g>
-      <path d="M50,1250 L150,1150" stroke="#b45309" stroke-width="8" stroke-linecap="round"/>
-      <path d="M150,1150 L170,1130 L190,1150 L170,1170 Z" fill="#fde047" />
+      <circle cx="880" cy="150" r="80" fill="#fef3c7" filter="url(#glossy-3d)" />
+      <circle cx="830" cy="130" r="80" fill="#1e1b4b" />
+      ${[150, 300, 450, 600].map(x => `<circle cx="${x}" cy="${1220}" r="12" fill="white" filter="url(#glossy-3d)" />`).join('')}
+      ${draw3DStar(150, 220, 25, "white")}
+      <text x="450" y="1235" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#c4b5fd" font-size="90">STAR NIGHT</text>
     `) 
   },
   { 
-    id: 'mermaid_vibes', 
-    name: 'Mermaid Vibes', 
+    id: '3d_sweet_berry', 
+    name: 'Berry Sweet', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M120,100 V1050 H880 V100 Z" fill="#e0f2fe" fill-rule="evenodd" />
-      <g transform="translate(500, 1220)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#0369a1" font-size="80">Mermaid Vibes</text>
-      </g>
-      <g transform="translate(850, 150)">
-        <path d="M0,0 Q30,-40 60,0 Q60,60 0,100 Q-60,60 -60,0 Q-30,-40 0,0" fill="#f472b6" opacity="0.8"/>
-        <path d="M0,40 Q-20,80 -40,120 M0,40 Q20,80 40,120" stroke="#ec4899" stroke-width="3" fill="none"/>
-      </g>
-      <g transform="translate(80, 1150)">
-        <path d="M0,0 Q-30,-40 -60,0 Q-60,60 0,100 Q60,60 60,0 Q30,-40 0,0" fill="#60a5fa" opacity="0.8"/>
-      </g>
-      <circle cx="200" cy="50" r="8" fill="white" opacity="0.5"/>
-      <circle cx="800" cy="60" r="12" fill="white" opacity="0.5"/>
-      <path d="M50,80 L70,100 L50,120 L30,100 Z" fill="#fde047" />
+      ${framePath('#fff1f2', 0.8)}
+      ${[0, 1, 2, 3, 4].map(i => `
+        <g transform="translate(${150 + i*170}, 80)" filter="url(#complex-shadow)">
+           <path d="M0,-30 Q20,-30 20,0 Q20,30 0,30 Q-20,30 -20,0 Q-20,-30 0,-30" fill="#f43f5e" filter="url(#glossy-3d)" />
+           <circle cx="-5" cy="-5" r="3" fill="white" opacity="0.5" />
+           <path d="M-5,-35 L5,-35" stroke="#16a34a" stroke-width="10" stroke-linecap="round" />
+        </g>
+      `).join('')}
+      <text x="500" y="1230" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#e11d48" font-size="100" filter="url(#complex-shadow)">SO SWEET!</text>
+      ${draw3DBow(100, 1180, 1.2, "#fb7185")}
+      ${draw3DBow(900, 1180, 1.2, "#fb7185")}
     `) 
   },
   { 
-    id: 'frog_mush', 
-    name: 'Froggy Forest', 
+    id: '3d_ocean_pearl', 
+    name: 'Ocean Pearl', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1070 H880 V120 Z" fill="#ecfdf5" fill-rule="evenodd" />
-      <g transform="translate(80, 100)">
-        <ellipse cx="0" cy="0" rx="40" ry="30" fill="#4ade80" />
-        <circle cx="-20" cy="-25" r="15" fill="#4ade80" />
-        <circle cx="20" cy="-25" r="15" fill="#4ade80" />
-        <circle cx="-20" cy="-25" r="5" fill="black" />
-        <circle cx="20" cy="-25" r="5" fill="black" />
+      ${framePath('#f0f9ff', 0.85)}
+      <g transform="translate(0, 1100)">
+        <path d="M0,50 Q250,0 500,50 Q750,100 1000,50 V233 H0 Z" fill="#0ea5e9" filter="url(#glossy-3d)" />
       </g>
-      <g transform="translate(880, 150)">
-        <path d="M-30,40 V0 Q-30,-40 0,-40 Q30,-40 30,0 V40" fill="#f87171" />
-        <rect x="-10" y="40" width="20" height="30" fill="#fef3c7" />
-        <circle cx="-10" cy="-15" r="5" fill="white" />
-        <circle cx="15" cy="5" r="5" fill="white" />
+      ${[100, 300, 500, 700, 900].map(x => `
+        <circle cx="${x}" cy="${1200 + (x%200===0?20:-20)}" r="30" fill="white" filter="url(#glossy-3d)" />
+      `).join('')}
+      <g transform="translate(150, 150)" filter="url(#complex-shadow)">
+        <path d="M-40,40 Q0,0 40,40 L0,80 Z" fill="#fca5a5" filter="url(#glossy-3d)" />
       </g>
-      <g transform="translate(500, 1200)">
-        <ellipse cx="0" cy="0" rx="30" ry="20" fill="#fed7aa" />
-        <path d="M30,0 Q50,0 50,-20" stroke="#f97316" stroke-width="4" fill="none"/>
-      </g>
-      <path d="M300,60 Q320,40 340,60" stroke="#10b981" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="500" y="1240" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="white" font-size="90" filter="url(#complex-shadow)">MERMAID</text>
     `) 
   },
   { 
-    id: 'love_struck', 
-    name: 'Love Struck', 
+    id: '3d_retro_pixel', 
+    name: 'Arcade Pixel', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M500,1100 C 100,750 150,250 500,250 C 850,250 900,750 500,1100 Z" fill="#fce7f3" fill-rule="evenodd" />
-      <g transform="translate(500, 1220)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#be185d" font-size="80">Love Struck</text>
+      ${framePath('#0f172a', 0.8)}
+      <rect x="0" y="0" width="1000" height="120" fill="#334155" />
+      <rect x="0" y="1050" width="1000" height="283" fill="#334155" />
+      ${[100, 200, 300, 700, 800, 900].map(x => `
+        <rect x="${x-20}" y="40" width="40" height="40" fill="#22c55e" filter="url(#glossy-3d)" />
+      `).join('')}
+      <g transform="translate(500, 1200)" filter="url(#complex-shadow)">
+        <text text-anchor="middle" font-family="monospace" font-weight="900" fill="#22c55e" font-size="90" style="letter-spacing: 20px;">INSERT COIN</text>
       </g>
-      <g transform="translate(150, 150)">
-        <circle cx="0" cy="0" r="40" fill="#fef3c7" />
-        <path d="M-40,0 Q-80,-20 -60,-60 M40,0 Q80,-20 60,-60" stroke="#fff" stroke-width="10" fill="none" />
-      </g>
-      <path d="M800,100 L900,200 M850,100 L800,150" stroke="#be185d" stroke-width="5" />
-      <path d="M100,1250 Q120,1220 100,1190 Q80,1220 100,1250" fill="#ef4444" />
-    `) 
-  },
-  { 
-    id: 'dreamy_life', 
-    name: 'Dreamy Life', 
-    src: createSVGFrame(`
-      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#bae6fd" />
-        <stop offset="100%" stop-color="#ddd6fe" />
-      </linearGradient>
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1020 H880 V120 Z" fill="url(#skyGrad)" fill-rule="evenodd" />
-      <g transform="translate(500, 1200)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#6d28d9" font-size="90">Dreamy Life</text>
-      </g>
-      <path d="M850,100 Q800,100 800,150 Q800,200 850,200 Q820,150 850,100" fill="#fde047" />
-      <g fill="white" opacity="0.9">
-        <circle cx="100" cy="180" r="30" />
-        <circle cx="140" cy="180" r="40" />
-        <circle cx="180" cy="180" r="30" />
-      </g>
-      <circle cx="500" cy="60" r="5" fill="white" />
-      <circle cx="200" cy="1100" r="5" fill="white" />
-    `) 
-  },
-  { 
-    id: 'star_gazer', 
-    name: 'Star Gazer', 
-    src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M500,150 L600,450 L915,450 L660,635 L755,935 L500,750 L245,935 L340,635 L85,450 L400,450 Z" fill="#ddd6fe" fill-rule="evenodd" />
-      <g transform="translate(500, 1220)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#4c1d95" font-size="80">Star Gazer</text>
-      </g>
-      <g transform="translate(100, 1100)">
-        <circle cx="0" cy="0" r="40" fill="#fff" stroke="#3b82f6" stroke-width="4"/>
-        <rect x="-20" y="-10" width="40" height="20" rx="5" fill="#3b82f6" />
-      </g>
-      <g transform="translate(850, 150)">
-        <path d="M0,0 L20,40 L-20,40 Z" fill="#ef4444" />
-        <rect x="-10" y="40" width="20" height="40" fill="#d1d5db" />
-      </g>
-      <circle cx="50" cy="100" r="30" fill="#fb923c" />
-      <path d="M10,100 H90" stroke="#ea580c" stroke-width="4" opacity="0.6"/>
-    `) 
-  },
-  { 
-    id: 'dog_flowers', 
-    name: 'Dog & Flowers', 
-    src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1020 H880 V120 Z" fill="#fefce8" fill-rule="evenodd" />
-      <g transform="translate(850, 1200)">
-        <circle cx="0" cy="0" r="40" fill="#d6d3d1" />
-        <circle cx="-35" cy="-10" r="20" fill="#d6d3d1" />
-        <circle cx="35" cy="-10" r="20" fill="#d6d3d1" />
-        <circle cx="0" cy="45" r="10" fill="#d6d3d1" />
-      </g>
-      ${drawFlower(200, 1240, "#fbcfe8")}
-      ${drawFlower(400, 1260, "#bfdbfe")}
-      ${drawFlower(600, 1240, "#fef08a")}
-      <path d="M50,100 Q80,70 110,100 Q80,130 50,100" fill="#fde047" opacity="0.7"/>
-    `) 
-  },
-  { 
-    id: 'dreamy_skies', 
-    name: 'Dreamy Skies', 
-    src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M500,200 C300,200 200,400 200,600 C200,800 350,900 500,900 C650,900 800,800 800,600 C800,400 700,200 500,200 Z" fill="#fef9c3" fill-rule="evenodd" />
-      <g transform="translate(500, 1220)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#a16207" font-size="80">Dreamy Skies</text>
-      </g>
-      <g transform="translate(100, 150)">
-        <path d="M0,0 Q30,-20 60,0 L30,40 Z" fill="#60a5fa" />
-        <circle cx="10" cy="5" r="2" fill="black" />
-      </g>
-      <path d="M750,100 Q800,50 850,100" stroke="#f87171" stroke-width="8" fill="none" />
-      <path d="M750,120 Q800,70 850,120" stroke="#fbbf24" stroke-width="8" fill="none" />
-      <path d="M750,140 Q800,90 850,140" stroke="#60a5fa" stroke-width="8" fill="none" />
-    `) 
-  },
-  { 
-    id: 'bestie_vibes', 
-    name: 'Bestie Vibes', 
-    src: createSVGFrame(`
-      <linearGradient id="rainbowGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#fecaca" />
-        <stop offset="50%" stop-color="#bfdbfe" />
-        <stop offset="100%" stop-color="#fef08a" />
-      </linearGradient>
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1020 H880 V120 Z" fill="url(#rainbowGrad)" fill-rule="evenodd" />
-      <g transform="translate(500, 1200)">
-        <text text-anchor="middle" font-family="serif" font-weight="900" fill="#db2777" font-size="80">Bestie Vibes</text>
-      </g>
-      <g transform="translate(100, 1150)">
-        <rect x="-5" y="0" width="10" height="100" fill="#b45309" rx="5" />
-        <path d="M-20,0 L0,-30 L20,0 L0,30 Z" fill="#fde047" />
-      </g>
-      <g fill="white" opacity="0.8">
-        <circle cx="850" cy="150" r="30" />
-        <circle cx="900" cy="150" r="25" />
-        <circle cx="100" cy="1000" r="25" />
+      <g transform="translate(150, 1180)" filter="url(#complex-shadow)">
+        <rect x="-40" y="-40" width="80" height="80" fill="#ef4444" rx="10" filter="url(#glossy-3d)" />
+        <circle cx="0" cy="0" r="20" fill="white" opacity="0.3" />
       </g>
     `) 
   },
   { 
-    id: 'constellations', 
-    name: 'Star Bear', 
+    id: '3d_princess_lace', 
+    name: 'Pink Lace', 
     src: createSVGFrame(`
-      <path d="M0,0 H1000 V1333 H0 Z M120,120 V1020 H880 V120 Z" fill="#e0e7ff" fill-rule="evenodd" />
-      <g transform="translate(850, 1200)">
-        <circle cx="0" cy="0" r="60" fill="#a8a29e" />
-        <circle cx="-50" cy="-40" r="25" fill="#a8a29e" />
-        <circle cx="50" cy="-40" r="25" fill="#a8a29e" />
-        <path d="M-15,-10 Q0,-5 15,-10" stroke="white" stroke-width="3" fill="none" />
+      ${framePath('#fdf2f8', 0.82)}
+      <path d="M0,120 Q50,70 100,120 Q150,170 200,120 Q250,70 300,120 Q350,170 400,120 Q450,70 500,120 Q550,170 600,120 Q650,70 700,120 Q750,170 800,120 Q850,70 900,120 Q950,170 1000,120" fill="none" stroke="#f472b6" stroke-width="30" filter="url(#glossy-3d)" />
+      <g transform="translate(500, 1200)" filter="url(#complex-shadow)">
+        <text text-anchor="middle" font-family="serif" font-style="italic" font-weight="900" fill="#db2777" font-size="100">Princess</text>
       </g>
-      <path d="M100,100 L200,150 L150,250 L50,200 Z" stroke="#818cf8" stroke-width="2" fill="none" stroke-dasharray="5,5" />
-      <circle cx="100" cy="100" r="4" fill="#818cf8" />
-      <circle cx="200" cy="150" r="4" fill="#818cf8" />
-      <circle cx="150" cy="250" r="4" fill="#818cf8" />
-      <circle cx="50" cy="200" r="4" fill="#818cf8" />
-      <path d="M850,100 Q820,100 820,130 Q820,160 850,160 Q835,130 850,100" fill="#fde047" />
+      ${draw3DBow(120, 150, 1.2, "#f472b6")}
+      ${draw3DBow(880, 150, 1.2, "#f472b6")}
+      ${[100, 300, 500, 700, 900].map(x => draw3DStar(x, 1080, 15, "#fbc2eb")).join('')}
+    `) 
+  },
+  { 
+    id: '3d_honey_bee', 
+    name: 'Honey Party', 
+    src: createSVGFrame(`
+      ${framePath('#fffbeb', 0.8)}
+      <g transform="translate(850, 150)" filter="url(#complex-shadow)">
+        <ellipse cx="0" cy="0" rx="50" ry="40" fill="#fde047" filter="url(#glossy-3d)" />
+        <rect x="-30" y="-40" width="10" height="80" fill="#1e293b" />
+        <rect x="0" y="-40" width="10" height="80" fill="#1e293b" />
+        <path d="M-20,-40 Q0,-60 20,-40" fill="#e2e8f0" opacity="0.6" />
+      </g>
+      <text x="500" y="1230" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#d97706" font-size="95" filter="url(#complex-shadow)">BEE HAPPY</text>
+      ${[100, 300, 500, 700].map(x => `
+        <circle cx="${x}" cy="${80}" r="25" fill="#fbbf24" filter="url(#glossy-3d)" />
+      `).join('')}
+    `) 
+  },
+  { 
+    id: '3d_galaxy_core', 
+    name: 'Space Orbit', 
+    src: createSVGFrame(`
+      ${framePath('#020617', 0.8)}
+      <circle cx="500" cy="500" r="600" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.3" />
+      <g transform="translate(150, 150)" filter="url(#complex-shadow)">
+        <circle cx="0" cy="0" r="60" fill="#f43f5e" filter="url(#glossy-3d)" />
+        <ellipse cx="0" cy="0" rx="100" ry="30" fill="none" stroke="white" stroke-width="4" transform="rotate(30)" />
+      </g>
+      <text x="500" y="1220" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-weight="900" fill="#60a5fa" font-size="90" filter="url(#complex-shadow)">GALAXY</text>
+      ${[1, 2, 3, 4, 5].map(i => draw3DStar(Math.random()*1000, Math.random()*1333, 10, "white")).join('')}
     `) 
   }
 ];
